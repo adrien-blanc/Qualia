@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Ingore vars.py
+vars.py
+
 # Distribution / packaging
 .Python
 build/
