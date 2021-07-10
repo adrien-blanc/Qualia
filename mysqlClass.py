@@ -28,7 +28,29 @@ class MysqlDef():
         return conn
 
     #------------------------------------------------#
-    #                 User functions                 #
+    #               Serveur functions                #
     #------------------------------------------------#
 
-    
+    def setServerInfo(conn, serveur_id, categorie):
+        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`) VALUES ({serveur_id}, {categorie});"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getServerInfo(conn, serveur_id):
+        sql = f"SELECT * FROM `serveur` WHERE `serveur`.`serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def checkIfServerExist(conn, serveur_id):
+        sql = f"SELECT * FROM `serveur` WHERE `serveur`.`serveur_id` = {serveur_id};"
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        cursor.fetchall()
+        if cursor.rowcount == 0:
+            return False
+        else:
+            return True
