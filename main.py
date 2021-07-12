@@ -79,12 +79,6 @@ BLACKLIST_IDS = vars.BLACKLIST_IDS
 
 
 
-
-
-
-
-
-
 #------------------------------------------------#
 #                                                #
 #             Méthodes pré-faites                #
@@ -96,23 +90,8 @@ BLACKLIST_IDS = vars.BLACKLIST_IDS
 #------------------------------------------------#
 
 @client.event
-async def on_ready(): # Get serveur info into a json file.
-    guilds = client.guilds
-
-    with open("/home/Production/Qualia/serveurInfos.json", "r") as file:
-        data = json.load(file)
-        file.close()
-
-    for guild in guilds:
-        data[guild.id] = {}
-        data[guild.id]["channel"] = []
-        for channel in guild.channels:
-            data[guild.id]["channel"].append(channel.id)
-    
-    with open("/home/Production/Qualia/serveurInfos.json", "w") as file:
-        json.dump(data, file)
-    channel = client.get_channel(804097189081120768)
-    await channel.send("Started")
+async def on_ready():
+    pass
 
 
 #------------------------------------------------#
@@ -132,18 +111,64 @@ async def on_member_join(member):
 @client.event
 async def on_voice_state_update(member, before, after):
     serveur_id = member.guild.id
+    channel = client.get_channel(804097189081120768)
 
     with open('/home/Production/Qualia/server.json',"r") as f:
         data = json.load(f)
         f.close()
+
+    category = client.get_channel(data[f"{serveur_id}"]["category"])
+
+    for c in data[f"{serveur_id}"]["channel"]:
+        for k, v in c.items():
+            if (after.channel is not None) and (after.channel.id == v):
+                limite = 0    
+                if k == "Flex":
+                    limite=5
+                elif k == "DuoQ":
+                    limite=2
+                tempChannel = await member.guild.create_voice_channel(f"🎧{k}", user_limit=limite, category = category)
+                await member.move_to(tempChannel)
+                await channel.send(v)
+                data[f"{serveur_id}"]["temp"] = [{member.id : tempChannel.id}]
+            
+                with open("/home/Production/Qualia/server.json", "w") as file:
+                    json.dump(data, file, indent=4)
     
-    for item in data:
-        print(item[serveur_id])
+    for c in data[f"{serveur_id}"]["temp"]:
+        for k, v in c.items():
+            deleteChannel = client.get_channel(v)
 
-        if after.channel.id == item[serveur_id].channel[0]:
-            await member.send("Alarm!")
+            count = len(deleteChannel.members)
+            await channel.send(count)
 
+            if count == 0:
+                await deleteChannel.delete()
+                data[f"{serveur_id}"].pop("temp")
+                
+                with open("/home/Production/Qualia/server.json", "w") as file:
+                    json.dump(data, file, indent=4)
 
+#------------------------------------------------#
+#              on raw reaction add               #
+#------------------------------------------------#
+
+@client.event
+async def on_raw_reaction_add(payload):
+    conn = MysqlDef.connectionBDD()
+    serveur_id = payload.guild_id
+    channel = client.get_channel(payload.channel_id)
+
+    await channel.send("wait")
+
+    messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
+
+    for mr in messageReaction:
+        msg_id = mr[0]
+
+    if payload.message_id == msg_id:
+        if payload.emoji.name == "📝":
+            await channel.send("ok")
 
 
 
@@ -172,7 +197,11 @@ async def on_voice_state_update(member, before, after):
 #                                                #
 #------------------------------------------------#
 
-@client.command(brief="")
+#-------------------------------------------------------------------#
+#           Initialise les Channel vocaux automatique               #
+#-------------------------------------------------------------------#
+
+@client.command()
 async def initVoiceChannel(ctx):
     conn = MysqlDef.connectionBDD()
     serveur_id = ctx.guild.id
@@ -180,9 +209,9 @@ async def initVoiceChannel(ctx):
     category = None
 
     category = await ctx.guild.create_category("Automatic Voice Channels", overwrites=None, reason=None)
-    voiceChannelGénéral = await ctx.guild.create_voice_channel("🎧Général", category = category)
-    voiceChannelFlex = await ctx.guild.create_voice_channel("🎧Flex", category = category)
-    voiceChannelDuoQ = await ctx.guild.create_voice_channel("🎧DuoQ", category = category)
+    voiceChannelGénéral = await ctx.guild.create_voice_channel("🎧Général", user_limit=0, category = category)
+    voiceChannelFlex = await ctx.guild.create_voice_channel("🎧Flex", user_limit=5, category = category)
+    voiceChannelDuoQ = await ctx.guild.create_voice_channel("🎧DuoQ", user_limit=2, category = category)
     MysqlDef.setServerInfo(conn, serveur_id, category.id)
     
     with open('/home/Production/Qualia/server.json',"r") as f:
@@ -191,14 +220,30 @@ async def initVoiceChannel(ctx):
     
     data[serveur_id] = {}
     data[serveur_id]['category'] = category.id
-    data[serveur_id]['channel'] = [{"General" : voiceChannelGénéral.id}, {"Flex" : voiceChannelFlex.id}, {"DuoQ" : voiceChannelDuoQ.id}]
+    data[serveur_id]['channel'] = [{"Général" : voiceChannelGénéral.id}, {"Flex" : voiceChannelFlex.id}, {"DuoQ" : voiceChannelDuoQ.id}]
     
     with open('/home/Production/Qualia/server.json','w') as f:
         json.dump(data, f, indent=4)
         f.close()
 
 
+#-------------------------------------------------------------#
+#           Initialise le message des rôles lol               #
+#-------------------------------------------------------------#
 
+@client.command()
+async def initMessage(ctx):
+    conn = MysqlDef.connectionBDD()
+    serveur_id = ctx.guild.id
+
+    await ctx.message.delete()
+
+    embed=discord.Embed(title="Vous voulez rejoindre une équipe League of Legends ?")
+    embed.set_author(name="Qualia E-Sport", icon_url="https://zupimages.net/up/21/13/tmqv.png") 
+    msg = await ctx.channel.send(embed = embed)
+    await msg.add_reaction("📝")
+
+    MysqlDef.setMessageReaction(conn, serveur_id, msg.id)
 
 
 

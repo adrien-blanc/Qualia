@@ -32,7 +32,7 @@ class MysqlDef():
     #------------------------------------------------#
 
     def setServerInfo(conn, serveur_id, categorie):
-        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`) VALUES ({serveur_id}, {categorie});"
+        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`) VALUES ({serveur_id}, {categorie}, 0);"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -54,3 +54,17 @@ class MysqlDef():
             return False
         else:
             return True
+
+    def setMessageReaction(conn, serveur_id, msgReaction_id):
+        sql = f"UPDATE `serveur` SET `reactionMessage` = {msgReaction_id} WHERE `serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getMessageReaction(conn, serveur_id):
+        sql = f"SELECT `reactionMessage` FROM serveur WHERE `serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
