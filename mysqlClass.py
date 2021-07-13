@@ -55,6 +55,10 @@ class MysqlDef():
         else:
             return True
 
+
+
+    #  Message Réaction pour l'inscription  #
+
     def setMessageReaction(conn, serveur_id, msgReaction_id):
         sql = f"UPDATE `serveur` SET `reactionMessage` = {msgReaction_id} WHERE `serveur_id` = {serveur_id};"
         print(sql)
@@ -63,8 +67,19 @@ class MysqlDef():
         conn.commit()
 
     def getMessageReaction(conn, serveur_id):
-        sql = f"SELECT `reactionMessage` FROM serveur WHERE `serveur_id` = {serveur_id};"
+        sql = f"SELECT `reactionMessage`, `reactionRole` FROM serveur WHERE `serveur_id` = {serveur_id};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
+
+
+
+    #  Message Réaction pour les rôles  #
+
+    def setMessageRole(conn, serveur_id, msgReaction_id):
+        sql = f"UPDATE `serveur` SET `reactionRole` = {msgReaction_id} WHERE `serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
