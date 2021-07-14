@@ -15,6 +15,7 @@ import os
 from math import *
 from discord.ext import commands
 from mysqlClass import MysqlDef
+from messageClass import Message
 from time import sleep
 from riotwatcher import LolWatcher, ApiError # RIOT API
 import datetime
@@ -77,6 +78,30 @@ client = commands.Bot(command_prefix='!', intents=intents)
 TOKEN = vars.TOKEN
 WHITELIST_IDS = vars.WHITELIST_IDS
 BLACKLIST_IDS = vars.BLACKLIST_IDS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -157,6 +182,36 @@ async def on_voice_state_update(member, before, after):
                     json.dump(data, file, indent=4)
 
 #------------------------------------------------#
+#            on raw reaction remove              #
+#------------------------------------------------#
+
+@client.event
+async def  on_raw_reaction_remove(payload):
+    conn = MysqlDef.connectionBDD()
+    serveur_id = payload.guild_id
+
+    messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
+
+    for mr in messageReaction:
+        msgInsc_id = mr[0]
+        msgRole_id = mr[1]
+
+    if (payload.message_id == msgInsc_id) and (payload.user_id != 863087982159724564):
+        if payload.emoji.name == "📝":
+            pass
+            #await payload.member.dm_channel.purge()
+
+    if (payload.message_id == msgRole_id) and (payload.user_id != 863087982159724564):
+        guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
+        member = discord.utils.get(guild.members, id=payload.user_id)
+        role = discord.utils.get(guild.roles, name = f"{payload.emoji.name}")
+
+        if payload.event_type == "REACTION_REMOVE":
+            await member.remove_roles(role)
+    
+    
+
+#------------------------------------------------#
 #              on raw reaction add               #
 #------------------------------------------------#
 
@@ -171,37 +226,153 @@ async def on_raw_reaction_add(payload):
         msgInsc_id = mr[0]
         msgRole_id = mr[1]
 
-    if (payload.message_id == msgInsc_id) and (payload.user_id != 863087982159724564):
-        if payload.emoji.name == "📝":
-            embed=discord.Embed(title="")
-            embed.set_author(name="Qualia E-Sport", icon_url="https://zupimages.net/up/21/28/xrxs.png")
-            embed.add_field(name="Réagissez à ce message par cette réaction pour commencer votre inscription.", value="📝")
-            await payload.member.send(embed = embed)
-    
-    
     if (payload.message_id == msgRole_id) and (payload.user_id != 863087982159724564):
         guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
         role = discord.utils.get(guild.roles, name = f"{payload.emoji.name}")
         if payload.event_type == "REACTION_ADD":
             await payload.member.add_roles(role)
+
+    #--------------------------------------------------#
+    #              Procédure inscription               #
+    #--------------------------------------------------#
+
+    if (payload.message_id == msgInsc_id) and (payload.user_id != 863087982159724564):
+        if payload.emoji.name == "📝":
+
+            #-------------------------------------------#
+            #              Procédure Init               #
+            #-------------------------------------------#
             
-@client.event
-async def  on_raw_reaction_remove(payload):
-    conn = MysqlDef.connectionBDD()
-    serveur_id = payload.guild_id
+            msgProcedure = await Message.confirmationInscription(payload.member)
 
-    messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
+            def checkEmoji(reaction, user):
+                emoji_list = ["✅", "❌"]
+                return payload.user_id == user.id and msgProcedure.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
 
-    for mr in messageReaction:
-        msgRole_id = mr[1]
+            reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
 
-    if (payload.message_id == msgRole_id) and (payload.user_id != 863087982159724564):
-        guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
-        member = discord.utils.get(guild.members, id=payload.user_id)
-        role = discord.utils.get(guild.roles, name = f"{payload.emoji.name}")
+            if reaction.emoji == "❌":
+                await msgProcedure.delete()
+                return
+            else:
 
-        if payload.event_type == "REACTION_REMOVE":
-            await member.remove_roles(role)
+                #---------------------------------------------#
+                #              Procédure Pseudo               #
+                #---------------------------------------------#
+
+                msgPseudo = await Message.inscriptionPseudo(payload.member)
+
+                def check(m):
+                    return m.author.id == payload.member.id and m.channel == payload.member.dm_channel
+
+                try:
+                    msgUser = await client.wait_for('message', timeout=300, check = check)
+                except asyncio.TimeoutError:
+                    await payload.member.send('Tu n\'as pas répondu dans les temps! Recommence la procédure depuis le début.')
+                    await msgProcedure.delete()
+                    await msgPseudo.delete()
+                    return
+                else:
+                    pseudo = msgUser.content
+
+                try:
+                    me = lol_watcher.summoner.by_name(my_region, f"{pseudo}")
+                    my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+                    for i in range(len(my_ranked_stats)) : 
+                        if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                            msgConfirmation = await Message.confirmePseudo(payload.member, my_ranked_stats[i]['summonerName'], my_ranked_stats[i]['tier'],my_ranked_stats[i]['rank'])
+
+                            def checkEmoji(reaction, user):
+                                emoji_list = ["✅", "❌"]
+                                return payload.user_id == user.id and msgConfirmation.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                            reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                            if reaction.emoji == "❌":
+                                await msgProcedure.delete()
+                                await msgPseudo.delete()
+                                await msgConfirmation.delete()
+                                return
+
+                except ApiError as error:
+                    msgError = await Message.errorPseudo(payload.member)
+
+                    await asyncio.sleep(10)
+                    await msgError.delete()
+                    await msgProcedure.delete()
+                    await msgPseudo.delete()
+                    await msgConfirmation.delete()
+                    return
+                
+
+                #--------------------------------------------#
+                #              Procédure Poste               #
+                #--------------------------------------------#
+                
+                msgPoste = await Message.inscriptionPoste(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["<:Top:864176960493584455>", "<:Jungle:864176942169325579>", "<:Mid:864176925719134229>", "<:Adc:864176890692370472>", "<:Supp:864176867497476107>"]
+                    return payload.user_id == user.id and msgPoste.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
+                role = discord.utils.get(guild.roles, name = f"{reaction.emoji.name}")
+                
+                await payload.member.add_roles(role)
+
+                if reaction.emoji == "<:Top:864176960493584455>":
+                    poste = 0
+                elif reaction.emoji == "<:Jungle:864176942169325579>":
+                    poste = 1
+                elif reaction.emoji == "<:Mid:864176925719134229>":
+                    poste = 2
+                elif reaction.emoji == "<:Adc:864176890692370472>":
+                    poste = 3
+                elif reaction.emoji == "<:Supp:864176867497476107>":
+                    poste = 4
+
+                #---------------------------------------------------#
+                #              Procédure Assossiation               #
+                #---------------------------------------------------#
+
+                msgChoix = await Message.inscriptionChoix(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["1️⃣", "2️⃣"]
+                    return payload.user_id == user.id and msgChoix.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                if reaction.emoji == "1️⃣":
+                    pass
+                elif reaction.emoji == "2️⃣":
+                    pass
+
+                await msgProcedure.delete()
+                await msgPseudo.delete()
+                await msgPoste.delete()
+                await msgChoix.delete()
+                await msgConfirmation.delete()
+                
+                msgFin = await Message.inscriptionFin(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["✅"]
+                    return payload.user_id == user.id and msgFin.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                if reaction.emoji == "✅":
+                    await msgFin.delete()
+            
+
+
+
+
+
+
 
 
 
@@ -324,6 +495,209 @@ async def initMessageRole(ctx):
 
         MysqlDef.setMessageRole(conn, serveur_id, msg.id)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------#
+#                                                #
+#               Fonctions Glbales                #
+#                                                #
+#------------------------------------------------#
+
+#------------------------------------------------#
+#              Set Team Creation                 #
+#------------------------------------------------#
+async def setTeamCreation(bool):
+    conn = MysqlDef.connectionBDD()
+
+    MysqlDef.setTeamCrea(conn, bool)
+
+    conn.close()
+
+#------------------------------------------------#
+#              Get Team Creation                 #
+#------------------------------------------------#
+async def getTeamCreation():
+    conn = MysqlDef.connectionBDD()
+
+    gets = MysqlDef.getTeamCrea(conn)
+
+    check = 1
+    for get in gets :
+        check = get[0]
+
+    conn.close()
+
+    return check
+
+#------------------------------------------------#
+#                Calcul User Elo                 #
+#------------------------------------------------#
+async def calculUserElo(userElo, userDiv):
+
+    calculTotalDiv = (userElo * 4) + (4 - userDiv)
+
+    return calculTotalDiv
+
+#------------------------------------------------#
+#            Calcul Inverse User Elo             #
+#------------------------------------------------#
+async def calculInvUserElo(userDiv):
+    calculDiv = (4-(userDiv%4))
+    calculElo = floor(userDiv/4)
+
+    return calculElo,calculDiv
+
+#------------------------------------------------#
+#                 Get Poste User                 #
+#------------------------------------------------#
+async def getPosteName(poste):
+    poste_name = ""
+    if int(poste) == 0:
+        poste_name = "TOP"
+    elif int(poste) == 1:
+        poste_name = "JGL"
+    elif int(poste) == 2:
+        poste_name = "MID"
+    elif int(poste) == 3:
+        poste_name = "ADC"
+    elif int(poste) == 4:
+        poste_name = "SUPP"
+    
+    return poste_name
+
+#------------------------------------------------#
+#               Get Elo User (int)               #
+#------------------------------------------------#
+async def getElo(elo_name):
+    elo = 0
+    if elo_name == "Iron":
+        elo = 0
+    elif elo_name == "Bronze":
+        elo = 1
+    elif elo_name == "Silver":
+        elo = 2
+    elif elo_name == "Gold":
+        elo = 3
+    elif elo_name == "Platinum":
+        elo = 4
+    elif elo_name == "Diamond":
+        elo = 5
+    return elo
+
+async def getDiv(elo_div):
+    div = 0
+    if elo_div == "I":
+        div = 1
+    elif elo_div == "II":
+        div = 2
+    elif elo_div == "III":
+        div = 3
+    elif elo_div == "IV":
+        div = 4
+    return div
+
+#------------------------------------------------#
+#               Get Elo User (str)               #
+#------------------------------------------------#
+async def getEloName(elo):
+    elo_name = ""
+    if elo == 0:
+        elo_name = "Iron"
+    elif elo == 1:
+        elo_name = "Bronze"
+    elif elo == 2:
+        elo_name = "Silver"
+    elif elo == 3:
+        elo_name = "Gold"
+    elif elo == 4:
+        elo_name = "Platinum"
+    elif elo == 5:
+        elo_name = "Diamond"
+    return elo_name
+
+async def getDivName(div):
+    divReturn = 0
+    if div == 1:
+        divReturn = "I"
+    elif div == 2:
+        divReturn = "II"
+    elif div == 3:
+        divReturn = "III"
+    elif div == 4:
+        divReturn = "IV"
+    return divReturn
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------#
+#                                                #
+#                Commande crontab                #
+#                                                #
+#------------------------------------------------#
+
+#--------------------------------------------------------------------#
+#           Check de la disponibilité de l'API de Riot               #
+#--------------------------------------------------------------------#
+"""
+Cette fonction test la disponiblité de l'API de Riot
+dans le cas où elle n'est plus accessible, 
+elle m'envoie en message privé un message pour me prévenir.
+"""
+
+@aiocron.crontab('0/5 * * * *')
+async def checkAPI():
+    user = client.get_user(211153408709754880)
+    now = datetime.datetime.now()
+    print(f" CHECK API : {now}")
+
+    try:
+        me = lol_watcher.summoner.by_name(my_region, f"{user}")
+        my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+    except ApiError as error:
+        await user.send(f"La clé d'API Riot n'est pas accessible. | {error} | https://developer.riotgames.com/")      
+        return
 
 
 client.run(TOKEN)

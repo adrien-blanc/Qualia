@@ -32,7 +32,7 @@ class MysqlDef():
     #------------------------------------------------#
 
     def setServerInfo(conn, serveur_id, categorie):
-        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`) VALUES ({serveur_id}, {categorie}, 0);"
+        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`, `reactionRole`) VALUES ({serveur_id}, {categorie}, 0, 0);"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -83,3 +83,21 @@ class MysqlDef():
         cursor = conn.cursor()
         cursor.execute(sql)
         conn.commit()
+
+    #------------------------------------------------#
+    #                 Team functions                 #
+    #------------------------------------------------#
+
+    def setTeamCrea(conn, bool):
+        sql = f"UPDATE `teamcrea` SET `bool`={bool} WHERE id_crea = 1;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getTeamCrea(conn):
+        sql = f"SELECT `bool` FROM `teamcrea` WHERE id_crea = 1;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
