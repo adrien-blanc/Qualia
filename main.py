@@ -11,14 +11,15 @@ import random
 import aiocron
 import asyncio
 import json
-import os
+import datetime
+
 from math import *
 from discord.ext import commands
 from mysqlClass import MysqlDef
 from messageClass import Message
 from time import sleep
 from riotwatcher import LolWatcher, ApiError # RIOT API
-import datetime
+
 
 #------------------------------------------------#
 #                                                #
@@ -278,21 +279,34 @@ async def on_raw_reaction_add(payload):
                 try:
                     me = lol_watcher.summoner.by_name(my_region, f"{pseudo}")
                     my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+
+                    eloSolo = None
+                    divSolo = None
+                    eloFlex = None
+                    divFlex = None
+
                     for i in range(len(my_ranked_stats)) : 
                         if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
-                            msgConfirmation = await Message.confirmePseudo(payload.member, my_ranked_stats[i]['summonerName'], my_ranked_stats[i]['tier'],my_ranked_stats[i]['rank'])
+                            eloSolo = my_ranked_stats[i]['tier']
+                            divSolo = my_ranked_stats[i]['rank']
+                        if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                            eloFlex = my_ranked_stats[i]['tier']
+                            divFlex = my_ranked_stats[i]['rank']
+                    
+                    
+                    msgConfirmation = await Message.confirmePseudo(payload.member, pseudo, eloSolo, divSolo, eloFlex, divFlex)
 
-                            def checkEmoji(reaction, user):
-                                emoji_list = ["✅", "❌"]
-                                return payload.user_id == user.id and msgConfirmation.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+                    def checkEmoji(reaction, user):
+                        emoji_list = ["✅", "❌"]
+                        return payload.user_id == user.id and msgConfirmation.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
 
-                            reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+                    reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
 
-                            if reaction.emoji == "❌":
-                                await msgProcedure.delete()
-                                await msgPseudo.delete()
-                                await msgConfirmation.delete()
-                                return
+                    if reaction.emoji == "❌":
+                        await msgProcedure.delete()
+                        await msgPseudo.delete()
+                        await msgConfirmation.delete()
+                        return
 
                 except ApiError as error:
                     msgError = await Message.errorPseudo(payload.member)
@@ -316,27 +330,59 @@ async def on_raw_reaction_add(payload):
                     return payload.user_id == user.id and msgPoste.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
 
                 reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+            
+                msgTempo = await Message.inscriptionTempo(payload.member)
 
                 guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
                 role = discord.utils.get(guild.roles, name = f"{reaction.emoji.name}")
                 
+                await removeAllRolePoste(payload.member, guild)
                 await payload.member.add_roles(role)
 
-                if reaction.emoji == "<:Top:864176960493584455>":
+                poste = 0
+                if reaction.emoji.name == "Top":
                     poste = 0
-                elif reaction.emoji == "<:Jungle:864176942169325579>":
+                elif reaction.emoji.name == "Jungle":
                     poste = 1
-                elif reaction.emoji == "<:Mid:864176925719134229>":
+                elif reaction.emoji.name == "Mid":
                     poste = 2
-                elif reaction.emoji == "<:Adc:864176890692370472>":
+                elif reaction.emoji.name == "Adc":
                     poste = 3
-                elif reaction.emoji == "<:Supp:864176867497476107>":
+                elif reaction.emoji.name == "Supp":
                     poste = 4
+                
+                #---------------------------------------------------#
+                #                    Calcul Div                     #
+                #---------------------------------------------------#
+
+                divTotal = 0
+
+                guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
+                
+                elo = 0
+                div = 0
+                
+                if eloSolo is None:
+                    if eloFlex is None:
+                        divTotal = 0
+                    else:
+                        role = discord.utils.get(guild.roles, name = f"{eloFlex.capitalize()}")
+                        elo = await getElo(eloFlex.capitalize())
+                        div = await getDiv(divFlex)
+                        divTotal = await calculUserElo(elo, div)
+                else:
+                    role = discord.utils.get(guild.roles, name = f"{eloSolo.capitalize()}")
+                    elo = await getElo(eloSolo.capitalize())
+                    div = await getDiv(divSolo)
+                    divTotal = await calculUserElo(elo, div)
+
+                await removeAllRoleElo(payload.member, guild)
+                await payload.member.add_roles(role)
 
                 #---------------------------------------------------#
                 #              Procédure Assossiation               #
                 #---------------------------------------------------#
-
+                await msgTempo.delete()
                 msgChoix = await Message.inscriptionChoix(payload.member)
 
                 def checkEmoji(reaction, user):
@@ -345,10 +391,28 @@ async def on_raw_reaction_add(payload):
 
                 reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
 
-                if reaction.emoji == "1️⃣":
-                    pass
-                elif reaction.emoji == "2️⃣":
-                    pass
+                try:
+                    channelAdmin = client.get_channel(864909655259217940)
+                    posteName = await getPosteName(poste)
+                    eloName = await getEloName(elo)
+                    divName = await getDivName(div)
+                    if reaction.emoji == "1️⃣":
+                        await Message.adminRecap(channelAdmin, payload.member.id, payload.member.name, me['id'], pseudo, posteName, eloName, divName, 1)
+                        MysqlDef.setInfoUser(conn, payload.member.id, serveur_id, me['id'], pseudo, poste, divTotal, 0, 1)
+                    elif reaction.emoji == "2️⃣":
+                        await Message.adminRecap(channelAdmin, payload.member.id, payload.member.name, me['id'], pseudo, posteName, eloName, divName, 0)
+                        MysqlDef.setInfoUser(conn, payload.member.id, serveur_id, me['id'], pseudo, poste, divTotal, 0, 0)
+                except:
+                    msgError = await Message.error(payload.member)
+
+                    await asyncio.sleep(10)
+                    await msgError.delete()
+                    await msgProcedure.delete()
+                    await msgPseudo.delete()
+                    await msgPoste.delete()
+                    await msgChoix.delete()
+                    await msgConfirmation.delete()
+                    return
 
                 await msgProcedure.delete()
                 await msgPseudo.delete()
@@ -374,6 +438,40 @@ async def on_raw_reaction_add(payload):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------#
+#                                                #
+#              Commandes Globales                #
+#                                                #
+#------------------------------------------------#
+
+#-------------------------------------------#
+#           Purge one channel               #
+#-------------------------------------------#
+
+@client.command()
+async def purge(ctx):
+    await ctx.channel.purge()
 
 
 
@@ -604,6 +702,13 @@ async def getElo(elo_name):
         elo = 4
     elif elo_name == "Diamond":
         elo = 5
+    elif elo_name == "Master":
+        elo = 6
+    elif elo_name == "Grandmaster":
+        elo = 7
+    elif elo_name == "Challenger":
+        elo = 8
+
     return elo
 
 async def getDiv(elo_div):
@@ -635,6 +740,12 @@ async def getEloName(elo):
         elo_name = "Platinum"
     elif elo == 5:
         elo_name = "Diamond"
+    elif elo == 6:
+        elo_name = "Master"
+    elif elo == 7:
+        elo_name = "GrandMaster"
+    elif elo == 8:
+        elo_name = "Challenger"
     return elo_name
 
 async def getDivName(div):
@@ -650,7 +761,63 @@ async def getDivName(div):
     return divReturn
 
 
+#------------------------------------------------#
+#                  Remove Role                   #
+#------------------------------------------------#
 
+async def removeAllRolePoste(member, guild):
+    role_top = discord.utils.get(guild.roles, name = 'Top')
+    role_jungle = discord.utils.get(guild.roles, name = 'Jungle')
+    role_mid = discord.utils.get(guild.roles, name = 'Mid')
+    role_adc = discord.utils.get(guild.roles, name = 'Adc')
+    role_support = discord.utils.get(guild.roles, name = 'Supp')
+
+    
+    if role_top in member.roles:
+        await member.remove_roles(role_top)
+    if role_jungle in member.roles:
+        await member.remove_roles(role_jungle)
+    if role_mid in member.roles:
+        await member.remove_roles(role_mid)
+    if role_adc in member.roles:
+        await member.remove_roles(role_adc)
+    if role_support in member.roles:
+        await member.remove_roles(role_support)
+
+#------------------------------------------------#
+#                   Remove Elo                   #
+#------------------------------------------------#
+
+async def removeAllRoleElo(member, guild):
+
+    role_iron = discord.utils.get(guild.roles, name = 'Iron')
+    role_bronze = discord.utils.get(guild.roles, name = 'Bronze')
+    role_silver = discord.utils.get(guild.roles, name = 'Silver')
+    role_gold = discord.utils.get(guild.roles, name = 'Gold')
+    role_platinum = discord.utils.get(guild.roles, name = 'Platinum')
+    role_diamond = discord.utils.get(guild.roles, name = 'Diamond')
+    role_master = discord.utils.get(guild.roles, name = 'Master')
+    role_grandmaster = discord.utils.get(guild.roles, name = 'GrandMaster')
+    role_challenger = discord.utils.get(guild.roles, name = 'Challenger')
+
+    if role_iron in member.roles:
+        await member.remove_roles(role_iron)
+    if role_bronze in member.roles:
+        await member.remove_roles(role_bronze)
+    if role_silver in member.roles:
+        await member.remove_roles(role_silver)
+    if role_gold in member.roles:
+        await member.remove_roles(role_gold)
+    if role_platinum in member.roles:
+        await member.remove_roles(role_platinum)
+    if role_diamond in member.roles:
+        await member.remove_roles(role_diamond)
+    if role_master in member.roles:
+        await member.remove_roles(role_master)
+    if role_grandmaster in member.roles:
+        await member.remove_roles(role_grandmaster)
+    if role_challenger in member.roles:
+        await member.remove_roles(role_challenger)
 
 
 

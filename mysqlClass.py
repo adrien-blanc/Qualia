@@ -68,11 +68,9 @@ class MysqlDef():
 
     def getMessageReaction(conn, serveur_id):
         sql = f"SELECT `reactionMessage`, `reactionRole` FROM serveur WHERE `serveur_id` = {serveur_id};"
-        print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
-
 
 
     #  Message Réaction pour les rôles  #
@@ -97,6 +95,25 @@ class MysqlDef():
 
     def getTeamCrea(conn):
         sql = f"SELECT `bool` FROM `teamcrea` WHERE id_crea = 1;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    
+    #------------------------------------------------#
+    #                 User functions                 #
+    #------------------------------------------------#
+
+    def setInfoUser(conn, discord_id, server_id, riot_id, pseudo, poste, div, team, search):
+        sql = f"INSERT INTO `users`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search`) VALUES ({discord_id}, {server_id}, '{riot_id}', '{pseudo}', {poste}, {div}, {team},{search}) ON DUPLICATE KEY UPDATE `server_id`={server_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `poste`={poste}, `div`={div}, `team`={team}, `search`={search};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getInfoUser(conn, server_id, discord_id):
+        sql = f"SELECT `discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search` FROM `users` WHERE `server_id` = {server_id} AND `discord_id` = {discord_id};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)

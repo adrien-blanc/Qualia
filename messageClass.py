@@ -17,6 +17,11 @@ from time import sleep
 
 class Message():
 
+
+    #------------------------------------------#
+    #              Message Inscr               #
+    #------------------------------------------#
+
     async def confirmationInscription(member):
         embed=discord.Embed(title="Procédure d'inscription")
         embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
@@ -35,22 +40,21 @@ class Message():
         msg = await member.send(embed = embed)
         return msg
 
-    async def confirmePseudo(member, pseudo, elo, div):
+    async def confirmePseudo(member, pseudo, eloSolo = None, divSolo = None, eloFlex = None, divFlex = None):
         embed=discord.Embed(title="Procédure d'inscription (**1/3**)")
         embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
-        embed.add_field(name="Vérifier ces informations :", value=f"> {pseudo} | {elo} {div}", inline=False)
+        if (eloSolo is None) and (eloFlex is not None) :
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **Unranked**\n > Flex | **{eloFlex} {divFlex}**", inline=False)
+        elif (eloSolo is not None) and (eloFlex is None) :
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **{eloSolo} {divSolo}**\n > Flex | **Unranked**", inline=False)
+        elif (eloSolo is not None) and (eloFlex is not None) :
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **{eloSolo} {divSolo}**\n > Flex | **{eloFlex} {divFlex}**", inline=False)
+        else:
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **Unranked**\n > Flex | **Unranked**", inline=False)
         embed.set_footer(text = f"Continuer : ✅ | Annuler : ❌")
         msg = await member.send(embed = embed)
         await msg.add_reaction("✅")
         await msg.add_reaction("❌")
-        return msg
-
-    async def errorPseudo(member):
-        embed=discord.Embed(title="Procédure d'inscription : **ERREUR**")
-        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
-        embed.add_field(name="Nous n'avons pas pu retrouver votre pseudo", value="Si vous estimez l'avoir renseigné correctement, veillez contacter un administrateur.", inline=False)
-        embed.set_footer(text = f"Ce message va s'auto-détruire. (10 secondes)")
-        msg = await member.send(embed = embed)
         return msg
 
     async def inscriptionPoste(member):
@@ -83,4 +87,43 @@ class Message():
         embed.set_footer(text = f"Pour supprimer ce message : ✅")
         msg = await member.send(embed = embed)
         await msg.add_reaction("✅")
+        return msg
+
+    #------------------------------------------#
+    #              Message Error               #
+    #------------------------------------------#
+
+    async def errorPseudo(member):
+        embed=discord.Embed(title="Procédure d'inscription : **ERREUR**")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Nous n'avons pas pu retrouver votre pseudo", value="Si vous estimez l'avoir renseigné correctement, veillez contacter un administrateur.", inline=False)
+        embed.set_footer(text = f"Ce message va s'auto-détruire. (10 secondes)")
+        msg = await member.send(embed = embed)
+        return msg
+    
+    async def error(member):
+        embed=discord.Embed(title="Procédure d'inscription : **ERREUR**")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Une erreur est survenue durant votre inscription.", value="Veuillez contacter un administrateur.", inline=False)
+        embed.set_footer(text = f"Ce message va s'auto-détruire. (10 secondes)")
+        msg = await member.send(embed = embed)
+        return msg
+
+    async def inscriptionTempo(member):
+        embed=discord.Embed(title="Procédure d'inscription : (**2/3**)")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Veuillez patienter", value="Cette étape peut prendre un certain temps.", inline=False)
+        msg = await member.send(embed = embed)
+        return msg
+
+    #------------------------------------------#
+    #              Message Admin               #
+    #------------------------------------------#
+
+    async def adminRecap(channelAdmin, member_id, member_name, riot_id, pseudo, poste, elo, div, team):
+        embed=discord.Embed(title="Nouvelle inscription !")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name=f"Un nouveau joueur s'est inscrit : **{member_id} | {member_name}**", value=f" > **Riot ID** : {riot_id} \n > **Pseudo In-Game** : {pseudo}\n > **Poste** : {poste}\n > **Rang** : {elo} {div}\n > **Choix team :** : {team}", inline=False)
+        embed.set_footer(text = f"Team : 1 | Pas Team : 0")
+        msg = await channelAdmin.send(embed = embed)
         return msg
