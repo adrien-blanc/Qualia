@@ -100,6 +100,34 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
+    def getNextTeamId(conn):
+        sql = f"SELECT id_team FROM team;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def addTeam(conn, team_id, team_name, team_categorie, team_channelOpgg, team_channelAnnonce, team_channelAnalyse, team_channelChampionPool, team_channelDraft, team_channelAbscence, team_channelGeneral, voiceChannel, elo_moy):
+        sql = f"INSERT INTO `team`(`id_team`, `name`, `categorie_id`, `channelOpgg_id`, `channelAnnonce_id`, `channelAnalyse_id`, `channelChampionPool_id`, `channelDraft_id`, `channelAbscence_id`, `channelGeneral_id`, `voiceChannel`, `elo_moy`, `coach_id`) VALUES ({team_id},'{team_name}', {team_categorie}, {team_channelOpgg},{team_channelAnnonce}, {team_channelAnalyse}, {team_channelChampionPool}, {team_channelDraft}, {team_channelAbscence}, {team_channelGeneral}, {voiceChannel}, {elo_moy}, 0)"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def deleteTeam(conn, team_id):
+        sql = f"DELETE FROM `team` WHERE `id_team` = {team_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getTeamPlayers(conn, team_id, serv_id):
+        sql = f"SELECT `discord_id`, `pseudo`, `poste`, `div` FROM `users` WHERE (`users`.`team` = {team_id} AND `users`.`server_id` = {serv_id}) ORDER BY `users`.`poste` ASC;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     
     #------------------------------------------------#
     #                 User functions                 #
@@ -118,3 +146,10 @@ class MysqlDef():
         cursor = conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
+
+    def addUser(conn, user_id, serv_id, riot_id, pseudo, user_role, user_div, user_team, search):
+        sql = f"INSERT INTO `users`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search`) VALUES ({user_id}, {serv_id}, '{riot_id}', '{pseudo}', {user_role}, {user_div}, {user_team}, {search}) ON DUPLICATE KEY UPDATE `server_id`={serv_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `poste`={user_role}, `div`={user_div}, `team`={user_team}, `search`={search};;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()

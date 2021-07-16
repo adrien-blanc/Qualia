@@ -127,3 +127,26 @@ class Message():
         embed.set_footer(text = f"Team : 1 | Pas Team : 0")
         msg = await channelAdmin.send(embed = embed)
         return msg
+    
+    async def getPseudo(channel, user):
+        embed=discord.Embed(title="Information sur le joueur")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Quel est le pseudo en jeu de : ", value=f"**{user}**", inline=False)
+        msg = await channel.send(embed = embed)
+        return msg
+
+    
+    #-----------------------------------------#
+    #              Message User               #
+    #-----------------------------------------#
+
+    async def userRecap(channelSeekTeam, member_name, pseudo, poste, elo, div, team):
+        embed=discord.Embed(title="Nouveau joueur")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        if team == 1:
+            embed.add_field(name=f"Un nouveau joueur arrive parmi nous, c'est **{member_name}**", value=f"\n > **Pseudo** : {pseudo}\n > **Poste** : {poste}\n > **Rang** : {elo} {div}\n > Il a fait le choix de rejoindre une **équipe** !", inline=False)
+        elif team == 0:
+            embed.add_field(name=f"Un nouveau joueur arrive parmi nous, c'est **{member_name}**", value=f"\n > **Pseudo** : {pseudo}\n > **Poste** : {poste}\n > **Rang** : {elo} {div}\n > Souhaite faire des games **communautaires** !", inline=False)
+        embed.set_footer(text = f"N'hésitez pas à le contacter !")
+        msg = await channelSeekTeam.send(embed = embed)
+        return msg
