@@ -135,6 +135,12 @@ class Message():
         msg = await channel.send(embed = embed)
         return msg
 
+    async def waitTeam(channel):
+        embed=discord.Embed(title="Création de l'équipe")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Veuillez patienter, cette opération peut prendre un certain temps.", value=f"environ 10 secondes...", inline=False)
+        msg = await channel.send(embed = embed)
+        return msg
     
     #-----------------------------------------#
     #              Message User               #

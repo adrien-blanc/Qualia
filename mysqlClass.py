@@ -107,8 +107,8 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
-    def addTeam(conn, team_id, team_name, team_categorie, team_channelOpgg, team_channelAnnonce, team_channelAnalyse, team_channelChampionPool, team_channelDraft, team_channelAbscence, team_channelGeneral, voiceChannel, elo_moy):
-        sql = f"INSERT INTO `team`(`id_team`, `name`, `categorie_id`, `channelOpgg_id`, `channelAnnonce_id`, `channelAnalyse_id`, `channelChampionPool_id`, `channelDraft_id`, `channelAbscence_id`, `channelGeneral_id`, `voiceChannel`, `elo_moy`, `coach_id`) VALUES ({team_id},'{team_name}', {team_categorie}, {team_channelOpgg},{team_channelAnnonce}, {team_channelAnalyse}, {team_channelChampionPool}, {team_channelDraft}, {team_channelAbscence}, {team_channelGeneral}, {voiceChannel}, {elo_moy}, 0)"
+    def addTeam(conn, team_id, serveur_id, team_name, team_categorie, team_channelOpgg, team_channelAnnonce, team_channelAnalyse, team_channelChampionPool, team_channelDraft, team_channelAbscence, team_channelGeneral, voiceChannel, elo_moy):
+        sql = f"INSERT INTO `team`(`id_team`, `server_id`, `name`, `categorie_id`, `channelOpgg_id`, `channelAnnonce_id`, `channelAnalyse_id`, `channelChampionPool_id`, `channelDraft_id`, `channelAbscence_id`, `channelGeneral_id`, `voiceChannel`, `elo_moy`, `coach_id`) VALUES ({team_id},  {serveur_id}, '{team_name}', {team_categorie}, {team_channelOpgg},{team_channelAnnonce}, {team_channelAnalyse}, {team_channelChampionPool}, {team_channelDraft}, {team_channelAbscence}, {team_channelGeneral}, {voiceChannel}, {elo_moy}, 0)"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -123,6 +123,48 @@ class MysqlDef():
 
     def getTeamPlayers(conn, team_id, serv_id):
         sql = f"SELECT `discord_id`, `pseudo`, `poste`, `div` FROM `users` WHERE (`users`.`team` = {team_id} AND `users`.`server_id` = {serv_id}) ORDER BY `users`.`poste` ASC;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+    
+    def getChannelAAAByTeamId(conn, team_id):
+        sql = f"SELECT channelOpgg_id FROM `team` WHERE id_team = {team_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def checkUsersInTeamByTeamID(conn, team_id):
+        sql = f"SELECT count(*) FROM users INNER JOIN team ON users.team = team.id_team WHERE team.id_team = {team_id} ORDER BY users.poste ASC;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def getUsersInTeamByTeamID(conn, team_id):
+        sql = f"SELECT `users`.`pseudo` ,`users`.`poste`, `users`.`discord_id`, `users`.`div` FROM `users` INNER JOIN `team` ON `users`.`team` = `team`.`id_team` WHERE `team`.`id_team` = {team_id} ORDER BY `users`.`poste` ASC;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def getTeamForUser(conn, user_id):
+        sql = f"SELECT `users`.`team`, `team`.`name` FROM `users` INNER JOIN `team` ON `users`.`team` = `team`.`id_team` WHERE `discord_id` = {user_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def updateTeamEloMoy(conn, div_moy, team_id):
+        sql = f"UPDATE `team` SET `elo_moy`= {div_moy} WHERE id_team = {team_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getUsersEloInTeamByTeamID(conn, team_id):
+        sql = f"SELECT users.div FROM users INNER JOIN team ON users.team = team.id_team WHERE team.id_team = {team_id} ORDER BY users.poste ASC;"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)

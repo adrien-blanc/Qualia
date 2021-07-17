@@ -400,7 +400,7 @@ async def on_raw_reaction_add(payload):
 
                 try:
                     channelAdmin = client.get_channel(864909655259217940)
-                    channelSeekTeam = client.get_channel(865297247657918464)
+                    channelSeekTeam = client.get_channel(865472953152045096)
                     posteName = await getPosteName(poste)
                     eloName = await getEloName(elo)
                     divName = await getDivName(div)
@@ -494,179 +494,175 @@ async def purge(ctx):
 #-------------------------------------------#
 
 @client.command()
-async def createTeam(ctx, user1 : discord.Member = None, user2 : discord.Member = None, user3 : discord.Member = None, user4 : discord.Member = None, user5 : discord.Member = None):
+async def createTeam(ctx):
     if ctx.author.id not in WHITELIST_IDS:
         await ctx.channel.send("Vous n'avez pas la permission d'utiliser cette commande.")
     else:
-        if (user1 is None) or (user2 is None) or (user3 is None) or (user4 is None) or (user5 is None):
-            await ctx.channel.send("Il vous faut renseigner les 5 joueurs !")
+        msgWait = await Message.waitTeam(ctx.channel)
+
+        serveur_id = ctx.guild.id
+
+        check = await getTeamCreation()
+        while check == 1 :
+            number = random.randrange(10)
+            await asyncio.sleep(number)
+            check = await getTeamCreation()
+
+        await setTeamCreation(1)
+
+        conn = MysqlDef.connectionBDD()
+
+        next_id = MysqlDef.getNextTeamId(conn)
+
+        team_id = None
+        compteur = 1
+        compteurNextId = 0
+        next_id_len = len(next_id)
+        while team_id is None:
+            if (compteurNextId == next_id_len and team_id is None):
+                team_id = compteur
+            else:
+                if next_id[compteurNextId][0] != compteur:
+                    team_id = compteur
+                compteur += 1
+                compteurNextId += 1
+
+        name_team = f"Team-{team_id}"
+
+        #------------------------------------------------#
+        #                      Role                      #
+        #------------------------------------------------#
+        if not (discord.utils.get(ctx.guild.roles, name=name_team)):
+            role = await ctx.guild.create_role(name=name_team)
+            randomColor = random.randint(0x888888, 0xbbbbbb)
+            await role.edit(hoist = True, mentionable = True, colour = randomColor, positions=31)
         else:
-            userPseudo = []
-            userDiscord = [user1, user2, user3, user4, user5]
+            role = discord.utils.get(ctx.guild.roles, name =name_team)
 
-            for user in userDiscord:
-                msg = await Message.getPseudo(ctx.channel, user)
+        #------------------------------------------------#
+        #                     Category                   #
+        #------------------------------------------------#
+        category = await ctx.guild.create_category(name_team, overwrites=None, reason=None)
 
-                def check(m):
-                    return m.author.id == ctx.author.id
+        roleDevAdmin = discord.utils.get(ctx.guild.roles, name="Pôle développement")
+        roleTeamAdmin = discord.utils.get(ctx.guild.roles, name="Pôle communication")
+        roleCoach = discord.utils.get(ctx.guild.roles, name="Coach/Analyste")
+        roleManager = discord.utils.get(ctx.guild.roles, name="Manager")
 
-                try:
-                    msgUser = await client.wait_for('message', timeout=300, check = check)
-                except asyncio.TimeoutError:
-                    await ctx.channel.send('Tu n\'as pas répondu dans les temps! Recommence la procédure depuis le début.')
-                    return
-                else:
-                    userPseudo.append(msgUser.content)
+        await category.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+        await category.set_permissions(roleDevAdmin, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = True, mention_everyone = True, read_message_history = True, manage_channels = True, manage_permissions = True, manage_webhooks = True, create_instant_invite = True, manage_messages = True, embed_links=True,  use_slash_commands=True, mute_members=True, deafen_members=True, move_members=True, use_voice_activation=True, stream=True, priority_speaker=True, send_tts_messages=True)
+        await category.set_permissions(roleTeamAdmin, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = True, mention_everyone = True, read_message_history = True, manage_channels = True, manage_permissions = True, manage_webhooks = True, create_instant_invite = True, manage_messages = True, embed_links=True, use_slash_commands=True, mute_members=True, deafen_members=True, move_members=True, use_voice_activation=True, stream=True, priority_speaker=True, send_tts_messages=True)
+        await category.set_permissions(roleManager,  read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False,  use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+        await category.set_permissions(roleCoach, read_messages=False, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = True, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=True, send_tts_messages=False)
+        await category.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+
+
+        #------------------------------------------------#
+        #                    Channel                     #
+        #------------------------------------------------#
+
+        channelOpgg = await ctx.guild.create_text_channel('📝𝐨𝐩𝐠𝐠', category=category)
+        await channelOpgg.set_permissions(roleManager, read_messages=True, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+        await channelOpgg.set_permissions(role, read_messages=True, send_messages=False, connect=True, speak=True, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+        channelAnnonce = await ctx.guild.create_text_channel(f"📌𝐀𝐧𝐧𝐨𝐧𝐜𝐞", category = category)
+        await channelAnnonce.set_permissions(role, read_messages=True, send_messages=False, connect=True, speak=True, add_reactions = True, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+        channelAnalyse = await ctx.guild.create_text_channel(f"🔎𝐀𝐧𝐚𝐥𝐲𝐬𝐞", category = category)
+        await channelAnalyse.set_permissions(role, read_messages=True, send_messages=False, connect=True, speak=True, add_reactions = True, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+        channelChampionPool = await ctx.guild.create_text_channel(f"🏹𝐂𝐡𝐚𝐦𝐩𝐢𝐨𝐧-𝐏𝐨𝐨𝐥", category = category, sync_permissions=True)
+        channelDraft = await ctx.guild.create_text_channel(f"📖𝐃𝐫𝐚𝐟𝐭", category = category, sync_permissions=True)
+        channelAbscence = await ctx.guild.create_text_channel(f"🕞𝐀𝐛𝐬𝐞𝐧𝐜𝐞", category = category, sync_permissions=True)
+        channelGeneral = await ctx.guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{name_team}", category = category)
+        voiceChannel = await ctx.guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
+        
+        MysqlDef.addTeam(conn, team_id, serveur_id, name_team, category.id, channelOpgg.id, channelAnnonce.id, channelAnalyse.id, channelChampionPool.id,  channelDraft.id, channelAbscence.id, channelGeneral.id, voiceChannel.id, 0)
+
+        await setTeamCreation(0)
+        
+        conn.close()
+
+        await msgWait.delete()
+        await ctx.channel.send(f"La team : **{name_team}** vient d'être créée.")
+
+
+#------------------------------------------------#
+#                   Add Joueur                   #
+#------------------------------------------------#
+
+@client.command(brief="")
+async def addJoueur(ctx, person : discord.Member = None, pseudo = None, poste: int = 0, team_id : int = 0):
+    
+    if ctx.author.id in WHITELIST_IDS:
+        if person is None : 
+            await ctx.send("Vous n'avez pas renseigné le joueur.")
+        else:
+            if ctx.channel.id != 864909622061695006:
+                await ctx.message.delete()
 
             serveur_id = ctx.guild.id
 
-            check = await getTeamCreation()
-            while check == 1 :
-                number = random.randrange(10)
-                await asyncio.sleep(number)
-                check = await getTeamCreation()
-
-            await setTeamCreation(1)
-
             conn = MysqlDef.connectionBDD()
 
-            next_id = MysqlDef.getNextTeamId(conn)
+            me = lol_watcher.summoner.by_name(my_region, f"{pseudo}")
+            my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
 
-            team_id = None
-            compteur = 1
-            compteurNextId = 0
-            next_id_len = len(next_id)
-            while team_id is None:
-                if (compteurNextId == next_id_len and team_id is None):
-                    team_id = compteur
+            eloSolo = None
+            divSolo = None
+            eloFlex = None
+            divFlex = None
+
+            for i in range(len(my_ranked_stats)) : 
+                if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                    eloSolo = my_ranked_stats[i]['tier']
+                    divSolo = my_ranked_stats[i]['rank']
+                if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                    eloFlex = my_ranked_stats[i]['tier']
+                    divFlex = my_ranked_stats[i]['rank']
+            
+            divTotal = 0
+
+            guild = discord.utils.find(lambda g : g.id == ctx.guild.id, client.guilds)
+            
+            elo = 0
+            div = 0
+            divTotal = 0
+            
+            if eloSolo is None:
+                if eloFlex is None:
+                    divTotal = 0
                 else:
-                    if next_id[compteurNextId][0] != compteur:
-                        team_id = compteur
-                    compteur += 1
-                    compteurNextId += 1
-
-            name_team = f"Team-{team_id}"
-
-            #------------------------------------------------#
-            #                      Role                      #
-            #------------------------------------------------#
-            if not (discord.utils.get(ctx.guild.roles, name=name_team)):
-                role = await ctx.guild.create_role(name=name_team)
-                randomColor = random.randint(0x888888, 0xbbbbbb)
-                await role.edit(hoist = True, mentionable = True, colour = randomColor, positions=31)
+                    role = discord.utils.get(guild.roles, name = f"{eloFlex.capitalize()}")
+                    elo = await getElo(eloFlex.capitalize())
+                    div = await getDiv(divFlex)
+                    divTotal = await calculUserElo(elo, div)
             else:
-                role = discord.utils.get(ctx.guild.roles, name =name_team)
+                role = discord.utils.get(guild.roles, name = f"{eloSolo.capitalize()}")
+                elo = await getElo(eloSolo.capitalize())
+                div = await getDiv(divSolo)
+                divTotal = await calculUserElo(elo, div)
 
-            #------------------------------------------------#
-            #                     Category                   #
-            #------------------------------------------------#
-            category = await ctx.guild.create_category(name_team, overwrites=None, reason=None)
+            await removeAllRoleElo(person, guild)
+            await person.add_roles(role)
 
-            roleDevAdmin = discord.utils.get(ctx.guild.roles, name="Pôle développement")
-            roleTeamAdmin = discord.utils.get(ctx.guild.roles, name="Pôle communication")
-            roleCoach = discord.utils.get(ctx.guild.roles, name="Coach/Analyste")
-            roleManager = discord.utils.get(ctx.guild.roles, name="Manager")
+            MysqlDef.addUser(conn, person.id, serveur_id, me['id'], pseudo, poste, divTotal, team_id, 1)
 
-            await category.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
-            await category.set_permissions(roleDevAdmin, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = True, mention_everyone = True, read_message_history = True, manage_channels = True, manage_permissions = True, manage_webhooks = True, create_instant_invite = True, manage_messages = True, embed_links=True,  use_slash_commands=True, mute_members=True, deafen_members=True, move_members=True, use_voice_activation=True, stream=True, priority_speaker=True, send_tts_messages=True)
-            await category.set_permissions(roleTeamAdmin, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = True, mention_everyone = True, read_message_history = True, manage_channels = True, manage_permissions = True, manage_webhooks = True, create_instant_invite = True, manage_messages = True, embed_links=True, use_slash_commands=True, mute_members=True, deafen_members=True, move_members=True, use_voice_activation=True, stream=True, priority_speaker=True, send_tts_messages=True)
-            await category.set_permissions(roleManager,  read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False,  use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
-            await category.set_permissions(roleCoach, read_messages=False, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = True, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=True, send_tts_messages=False)
-            await category.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+            TeamNewInfo = MysqlDef.getTeamForUser(conn, person.id)
 
+            for Team in TeamNewInfo:
+                newIdTeam = Team[0]
+                newNameTeam = Team[1]
 
-            #------------------------------------------------#
-            #                    Channel                     #
-            #------------------------------------------------#
+            newTeamRole = discord.utils.get(ctx.guild.roles, name = f'{newNameTeam}')
 
-            channelOpgg = await ctx.guild.create_text_channel('📝𝐨𝐩𝐠𝐠', category=category)
-            await channelOpgg.set_permissions(roleManager, read_messages=True, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
-            await channelOpgg.set_permissions(role, read_messages=True, send_messages=False, connect=True, speak=True, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
-            channelAnnonce = await ctx.guild.create_text_channel(f"📌𝐀𝐧𝐧𝐨𝐧𝐜𝐞", category = category)
-            await channelAnnonce.set_permissions(role, read_messages=True, send_messages=False, connect=True, speak=True, add_reactions = True, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
-            channelAnalyse = await ctx.guild.create_text_channel(f"🔎𝐀𝐧𝐚𝐥𝐲𝐬𝐞", category = category)
-            await channelAnalyse.set_permissions(role, read_messages=True, send_messages=False, connect=True, speak=True, add_reactions = True, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
-            channelChampionPool = await ctx.guild.create_text_channel(f"🏹𝐂𝐡𝐚𝐦𝐩𝐢𝐨𝐧-𝐏𝐨𝐨𝐥", category = category, sync_permissions=True)
-            channelDraft = await ctx.guild.create_text_channel(f"📖𝐃𝐫𝐚𝐟𝐭", category = category, sync_permissions=True)
-            channelAbscence = await ctx.guild.create_text_channel(f"🕞𝐀𝐛𝐬𝐞𝐧𝐜𝐞", category = category, sync_permissions=True)
-            channelGeneral = await ctx.guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{name_team}", category = category)
-            voiceChannel = await ctx.guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
-            
-            MysqlDef.addTeam(conn, team_id, name_team, category.id, channelOpgg.id, channelAnnonce.id, channelAnalyse.id, channelChampionPool.id,  channelDraft.id, channelAbscence.id, channelGeneral.id, voiceChannel.id, 0)
+            await person.add_roles(newTeamRole)
 
-            await setTeamCreation(0)
+            await updateOPGGTeam(ctx.guild, newIdTeam)
+            await updateTeamElo(newIdTeam)
 
-            #------------------------------------------------#
-            #                  Ajout Joueur                  #
-            #------------------------------------------------#
-            
-            #try :
-            compteur = 0
-            
-            for user in userPseudo:
-                eloU1 = 10
-                divU1 = 0
-                
-                if user is not None:
-                    #try:
-                    me = lol_watcher.summoner.by_name(my_region, f"{user}")
-                    my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
-                    userElo = 0
-                    for i in range(len(my_ranked_stats)) : 
-                        if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
-                            elo = await getElo(my_ranked_stats[i]['tier'].capitalize())
-                            div = await getDiv(my_ranked_stats[i]['rank'])
-                            userElo = await calculUserElo(elo, div)
-                        if eloU1 == 10:
-                            if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
-                                elo = await getElo(my_ranked_stats[i]['tier'].capitalize())
-                                div = await getDiv(my_ranked_stats[i]['rank'])
-                                userElo = await calculUserElo(elo, div)
-                    await addPlayerToTeam(conn, user1, user2, user3, user4, user5, serveur_id, me['id'], user, userElo, team_id, compteur)
-                    #except:
-                    #    await ctx.send(f"**{user}** n'est pas un pseudo valide.")
-                    
-                compteur += 1
-            """
-            except:
-                await ctx.channel.send("Une erreur est survenue. Suppression des channels crées...")
-                MysqlDef.deleteTeam(conn, team_id)
-                await channelOpgg.delete()
-                await channelAnnonce.delete()
-                await channelAnalyse.delete()
-                await channelChampionPool.delete()
-                await channelDraft.delete()
-                await channelAbscence.delete()
-                await channelGeneral.delete()
-                await voiceChannel.delete()
-                await category.delete()
-                conn.close()
-                return
-            """
-            #try: 
-            await updateOPGGTeam(channelOpgg, ctx.guild, name_team, team_id, serveur_id)
-            """
-            except:
-                await ctx.channel.send("Une erreur est survenue. Suppression des channels crées...")
-                MysqlDef.deleteTeam(conn, team_id)
-                await channelOpgg.delete()
-                await channelAnnonce.delete()
-                await channelAnalyse.delete()
-                await channelChampionPool.delete()
-                await channelDraft.delete()
-                await channelAbscence.delete()
-                await channelGeneral.delete()
-                await voiceChannel.delete()
-                await category.delete()
-                conn.close()
-                return
-            """
             conn.close()
 
-            await ctx.channel.send(f"La team : **{name_team}** vient d'être créée.")
-
-
-
+            await ctx.send(f"Le joueur **{person.name}** a été ajouté à la team **{newNameTeam}**.")
+    else:
+        await ctx.send("Vous n'avez pas les droits pour exécuter cette commande.")
 
 
 
@@ -1044,35 +1040,134 @@ async def addPlayerToTeam(conn, user1, user2, user3, user4, user5, serveur_id, r
 #                update OPGG Team                #
 #------------------------------------------------#
 
-async def updateOPGGTeam(channel, guild, team_name, team_id, serv_id):
+async def updateOPGGTeam(guild, team_id):
 
     conn = MysqlDef.connectionBDD()
 
-    users = MysqlDef.getTeamPlayers(conn, team_id, serv_id) #`discord_id`, `pseudo`, `poste`, `div`
+    channels = MysqlDef.getChannelAAAByTeamId(conn, team_id)
 
-    embed=discord.Embed(title=f"Information sur l'équipe : **{team_name}**")
-    totalElo = 0
-    for user in users:
-        discordUser = guild.get_member(user[0])
-        elo, div = await calculInvUserElo(user[3])
-        eloName = await getEloName(elo)
-        divName = await getDivName(div)
-        totalElo += user[3]
-        if user[2] == 0:
-            poste = "TOP"
-        elif user[2] == 1:
-            poste = "JUNGLE"
-        elif user[2] == 2:
-            poste = "MID"
-        elif user[2] == 3:
-            poste = "ADC"
-        elif user[2] == 4:
-            poste = "SUPPORT"
-        embed.add_field(name=f"{poste}", value=f" > **{discordUser.name}** (**{user[1]}**) | **{eloName} {divName}**", inline=False)
-    await channel.send(embed = embed)
+    channelAAA = None
+    for channel in channels[0]:
+        channelAAA = client.get_channel(channel)
+        await channelAAA.purge()
+
+    check = MysqlDef.checkUsersInTeamByTeamID(conn, team_id)
+    for c in check :
+        if c[0] != 0:
+            description = await getTeamDescription(team_id) 
+            embed=discord.Embed(title="Information sur les joueurs de la team :")
+            embed.set_author(name="Qualia" , icon_url="https://zupimages.net/up/21/28/xrxs.png")
+
+            if 'TOP' in description.keys():
+                idTop = int(description["TOP"]["discordTag"])
+                tagTop = guild.get_member(idTop)
+                nameTop = description["TOP"]["discordName"]
+                embed.add_field(name = f"TOP", value = f"{tagTop} ({nameTop})", inline=False)
+
+            if 'JGL' in description.keys():
+                idJgl = int(description["JGL"]["discordTag"])
+                tagJgl = guild.get_member(idJgl)
+                nameJgl = description["JGL"]["discordName"]
+                embed.add_field(name = f"JGL", value = f"{tagJgl} ({nameJgl})", inline=False)
+
+            if 'MID' in description.keys():
+                idMid = int(description["MID"]["discordTag"])
+                tagMid = guild.get_member(idMid)
+                nameMid = description["MID"]["discordName"]
+                embed.add_field(name = f"MID", value = f"{tagMid} ({nameMid})", inline=False)
+            
+            if 'ADC' in description.keys():
+                idAdc = int(description["ADC"]["discordTag"])
+                tagAdc = guild.get_member(idAdc)
+                nameAdc = description["ADC"]["discordName"]
+                embed.add_field(name = f"ADC", value = f"{tagAdc} ({nameAdc})", inline=False)
+
+            if 'SUPP' in description.keys():
+                idSupp = int(description["SUPP"]["discordTag"])
+                tagSupp = guild.get_member(idSupp)
+                nameSupp = description["SUPP"]["discordName"]
+                embed.add_field(name = f"SUPP", value = f"{tagSupp} ({nameSupp})", inline=False)
+
+            await channelAAA.send(embed = embed)
+
+            httpLink = await getTeamOPGG(team_id)
+
+            await channelAAA.send(httpLink)
 
     conn.close()
     
+#------------------------------------------------#
+#              Get Team Discription              #
+#------------------------------------------------#
+async def getTeamDescription(team_id):
+    conn = MysqlDef.connectionBDD()
+
+    users = MysqlDef.getUsersInTeamByTeamID(conn, team_id)
+
+    description = {}
+    for user in users:
+        userPoste = await getPosteName(user[1])
+        description[userPoste] = {"discordTag" : user[2], "discordName" : user[0]}
+
+    conn.close()
+
+    return description
+
+#------------------------------------------------#
+#                 Get Team OP GG                 #
+#------------------------------------------------#
+async def getTeamOPGG(team_id):
+    conn = MysqlDef.connectionBDD()
+
+    users = MysqlDef.getUsersInTeamByTeamID(conn, team_id)
+
+    httpLink = "https://euw.op.gg/multi/query="
+    compteur = 0
+    for user in users:
+        userPseudo = user[0]
+        userPseudo = userPseudo.replace(" ", "%20")
+        if compteur == 0:
+            httpLink = httpLink + userPseudo
+            compteur += 1
+        else:
+            httpLink = httpLink + "%2C" + userPseudo
+
+    conn.close()
+
+    return httpLink
+
+
+#------------------------------------------------#
+#                Update Elo Team                 #
+#------------------------------------------------#
+async def updateTeamElo(team_id):
+    conn = MysqlDef.connectionBDD() 
+
+    countNumber = MysqlDef.checkUsersInTeamByTeamID(conn, team_id)   # On compte le nombre de joueur présent dans la team
+    for cn in countNumber:
+        number = cn[0]
+
+    users = MysqlDef.getUsersEloInTeamByTeamID(conn, team_id) # On récupère l'elo des joueurs de l'équipe
+
+    divList = 0
+    for user in users:
+        divList += user[0]
+
+    divMoy = 0
+
+    if number != 0:
+        divMoy = divList/number
+        if divMoy%1 <= 0.5:
+            divMoy = floor(divMoy) # On fait la moyenne des joueurs arrondi négatif
+        else:
+            divMoy = ceil(divMoy) # On fait la moyenne des joueurs arrondi positif
+
+    MysqlDef.updateTeamEloMoy(conn, divMoy, team_id)
+
+    conn.close()
+
+
+
 
 
 
@@ -1108,7 +1203,8 @@ elle m'envoie en message privé un message pour me prévenir.
 
 @aiocron.crontab('0/5 * * * *')
 async def checkAPI():
-    user = client.get_user(211153408709754880)
+    listOfUser = ["DJ Malz", "LL Electrix", "DMara"] # "AzykOs",
+    user = random.choice(listOfUser)
     now = datetime.datetime.now()
     print(f" CHECK API : {now}")
 
