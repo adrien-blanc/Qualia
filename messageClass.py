@@ -156,3 +156,94 @@ class Message():
         embed.set_footer(text = f"N'hésitez pas à le contacter !")
         msg = await channelSeekTeam.send(embed = embed)
         return msg
+
+    #---------------------------------------------#
+    #                                             #
+    #              Message Mentorat               #
+    #                                             #
+    #---------------------------------------------#
+
+    #------------------------------------#
+    #               MENTOR               #
+    #------------------------------------#
+
+    async def mentorInit(member):
+        embed=discord.Embed(title="Inscription Mentor")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Vous venez de commencer une procédure d'inscription pour devenir Mentor !", value=f"Nous allons vous poser quelques questions sur vos objectifs au sein de se système de mentorat.", inline=False)
+        embed.add_field(name="Voici une liste des informations qui vont vous être demandées :", value="> - Votre pseudo IG\n> - Votre rôle\n> - Vos objectifs", inline=False)
+        embed.set_footer(text = f"Continuer : ✅ | Annuler : ❌")
+        msg = await member.send(embed = embed)
+        await msg.add_reaction("✅")
+        await msg.add_reaction("❌")
+        return msg
+
+    async def mentorPseudo(member):
+        embed=discord.Embed(title="Inscription Mentor : (**1/4**)")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Quel est votre **pseudo** dans le jeu *League Of Legends*", value="Attention réponse senssible à la case !", inline=False)
+        msg = await member.send(embed = embed)
+        return msg
+
+    async def confirmePseudoMentor(member, pseudo, eloSolo = None, divSolo = None, eloFlex = None, divFlex = None):
+        embed=discord.Embed(title="Inscription Mentor : (**2/4**)")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        if (eloSolo is None) and (eloFlex is not None) :
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **Unranked**\n > Flex | **{eloFlex} {divFlex}**", inline=False)
+        elif (eloSolo is not None) and (eloFlex is None) :
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **{eloSolo} {divSolo}**\n > Flex | **Unranked**", inline=False)
+        elif (eloSolo is not None) and (eloFlex is not None) :
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **{eloSolo} {divSolo}**\n > Flex | **{eloFlex} {divFlex}**", inline=False)
+        else:
+            embed.add_field(name="Vérifier ces informations :", value=f"> Pseudo : **{pseudo}**\n > Solo/Duo | **Unranked**\n > Flex | **Unranked**", inline=False)
+        embed.set_footer(text = f"Continuer : ✅ | Annuler : ❌")
+        msg = await member.send(embed = embed)
+        await msg.add_reaction("✅")
+        await msg.add_reaction("❌")
+        return msg
+
+    async def mentorPoste(member):
+        embed=discord.Embed(title="Inscription Mentor : (**3/4**)")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png") 
+        embed.add_field(name="Quel est votre main poste actuelle ?", value = "Vous pourrez le changer par la suite.", inline=False)
+        embed.set_footer(text = f"Réagissez avec le bon émoji ci-dessous.")
+        msg = await member.send(embed = embed)
+        await msg.add_reaction("<:Top:864176960493584455>")
+        await msg.add_reaction("<:Jungle:864176942169325579>")
+        await msg.add_reaction("<:Mid:864176925719134229>")
+        await msg.add_reaction("<:Adc:864176890692370472>")
+        await msg.add_reaction("<:Supp:864176867497476107>")
+        return msg
+
+    async def mentorNombre(member):
+        embed=discord.Embed(title="Inscription Mentor : (**4/4**)")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png") 
+        embed.add_field(name="Jusqu'à combien de joueur êtes vous prêt à mentorer ?", value = "Maximum 5.", inline=False)
+        embed.set_footer(text = f"Réagissez avec le bon émoji ci-dessous.")
+        msg = await member.send(embed = embed)
+        await msg.add_reaction("1️⃣")
+        await msg.add_reaction("2️⃣")
+        await msg.add_reaction("3️⃣")
+        await msg.add_reaction("4️⃣")
+        await msg.add_reaction("5️⃣")
+        return msg
+
+    async def mentorFin(member):
+        embed=discord.Embed(title="Inscription Mentor : (**Terminé**)")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Nous avons terminé votre inscription en tant que mentor.", value="Merci d'avoir effectué cette démarche. Nous vous recontacterons au plus vite.", inline=False)
+        embed.set_footer(text = f"Pour supprimer ce message : ✅")
+        msg = await member.send(embed = embed)
+        await msg.add_reaction("✅")
+        return msg
+
+    async def newMentor(channel, member_name,  pseudo, elo, div, poste, nbr):
+        embed=discord.Embed(title=f"Nouveau mentor !")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name=f"Voici les informations à propos de {member_name} :", value=f"> Pseudo : {pseudo}\n > Rang : {elo} {div}\n > Main poste : {poste}\n > Il accepte au maximum {nbr} joueurs.", inline=False)
+        pseudo = pseudo.replace(" ", "+")
+        embed.add_field(name=f"Voici son OP.GG", value=f"> https://euw.op.gg/summoner/userName={pseudo}", inline=False)
+        embed.set_footer(text = f"Pour demander à se faire mentoré par {member_name} : ✅")
+        msg = await channel.send(embed = embed)
+        await msg.add_reaction("✅")
+        return msg

@@ -5,6 +5,7 @@
 #------------------------------------------------#
 
 
+import discord
 import mysql.connector
 import vars
 
@@ -32,7 +33,7 @@ class MysqlDef():
     #------------------------------------------------#
 
     def setServerInfo(conn, serveur_id, categorie):
-        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`, `reactionRole`) VALUES ({serveur_id}, {categorie}, 0, 0);"
+        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`, `reactionRole` , `categoryMentorat`, `reactionMentorat`, `channelMentor`, `channelMentee`) VALUES ({serveur_id}, {categorie}, 0, 0, 0, 0, 0, 0);"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -67,7 +68,7 @@ class MysqlDef():
         conn.commit()
 
     def getMessageReaction(conn, serveur_id):
-        sql = f"SELECT `reactionMessage`, `reactionRole` FROM serveur WHERE `serveur_id` = {serveur_id};"
+        sql = f"SELECT `reactionMessage`, `reactionRole`, `reactionMentorat` FROM serveur WHERE `serveur_id` = {serveur_id};"
         cursor = conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
@@ -81,6 +82,22 @@ class MysqlDef():
         cursor = conn.cursor()
         cursor.execute(sql)
         conn.commit()
+
+    #  Category et channel Mentorat  #
+
+    def setMentorat(conn, serveur_id, msg, mentor, mentee, category):
+        sql = f"UPDATE `serveur` SET `reactionMentorat` = {msg}, `categoryMentorat` = {category}, `channelMentor` = {mentor}, `channelMentee` = {mentee} WHERE `serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getMentorat(conn, serveur_id):
+        sql = f"SELECT `reactionMentorat`, `categoryMentorat`, `channelMentor`, `channelMentee` FROM `serveur` WHERE `serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
 
     #------------------------------------------------#
     #                 Team functions                 #
@@ -190,7 +207,25 @@ class MysqlDef():
         return cursor.fetchall()
 
     def addUser(conn, user_id, serv_id, riot_id, pseudo, user_role, user_div, user_team, search):
-        sql = f"INSERT INTO `users`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search`) VALUES ({user_id}, {serv_id}, '{riot_id}', '{pseudo}', {user_role}, {user_div}, {user_team}, {search}) ON DUPLICATE KEY UPDATE `server_id`={serv_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `poste`={user_role}, `div`={user_div}, `team`={user_team}, `search`={search};;"
+        sql = f"INSERT INTO `users`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search`) VALUES ({user_id}, {serv_id}, '{riot_id}', '{pseudo}', {user_role}, {user_div}, {user_team}, {search}) ON DUPLICATE KEY UPDATE `server_id`={serv_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `poste`={user_role}, `div`={user_div}, `team`={user_team}, `search`={search};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    #--------------------------------------------------#
+    #                 Mentor functions                 #
+    #--------------------------------------------------#
+
+    def getMentorChannels(conn, server_id):
+        sql = f"SELECT `channelMentor`, `channelMentee` FROM `serveur` WHERE `serveur_id` = {server_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def addMentor(conn, member_id, server_id, riot_id, pseudo, divTotal, poste, nbr):
+        sql = f"INSERT INTO `mentor`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `div`, `poste`, `count`, `count_max`) VALUES ({member_id}, {server_id}, '{riot_id}', '{pseudo}', {divTotal}, {poste}, 0, {nbr}) ON DUPLICATE KEY UPDATE `server_id`={server_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `div`={divTotal}, `poste`={poste}, `count` = 0, `count_max` = {nbr};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
