@@ -68,7 +68,8 @@ class MysqlDef():
         conn.commit()
 
     def getMessageReaction(conn, serveur_id):
-        sql = f"SELECT `reactionMessage`, `reactionRole`, `reactionMentorat` FROM serveur WHERE `serveur_id` = {serveur_id};"
+        sql = f"SELECT `serveur`.`reactionMessage`, `serveur`.`reactionRole`, `serveur`.`reactionMentorat` FROM `serveur` WHERE `serveur`.`serveur_id` = {serveur_id};"
+        print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
@@ -187,6 +188,13 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
+    def getCategoriMentor(conn, serveur_id):
+        sql = f"SELECT `categoryMentorat` FROM `serveur` WHERE `serveur_id`={serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     
     #------------------------------------------------#
     #                 User functions                 #
@@ -224,8 +232,33 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
-    def addMentor(conn, member_id, server_id, riot_id, pseudo, divTotal, poste, nbr):
-        sql = f"INSERT INTO `mentor`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `div`, `poste`, `count`, `count_max`) VALUES ({member_id}, {server_id}, '{riot_id}', '{pseudo}', {divTotal}, {poste}, 0, {nbr}) ON DUPLICATE KEY UPDATE `server_id`={server_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `div`={divTotal}, `poste`={poste}, `count` = 0, `count_max` = {nbr};"
+    def addMentor(conn, member_id, server_id, riot_id, pseudo, divTotal, poste, connaissance, peda, micromacro):
+        sql = f"INSERT INTO `mentor`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `div`, `poste`, `connaissance`, `pedagogue`, `micromacro`) VALUES ({member_id}, {server_id}, '{riot_id}', '{pseudo}', {divTotal}, {poste}, {connaissance}, {peda}, {micromacro}) ON DUPLICATE KEY UPDATE `server_id`={server_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `div`={divTotal}, `poste`={poste}, `connaissance`={connaissance}, `pedagogue`={peda}, `micromacro` = {micromacro};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    #--------------------------------------------------#
+    #                 Elèves functions                 #
+    #--------------------------------------------------#
+
+    def checkEleveExist(conn, member_id, server_id):
+        sql = f"SELECT count(*) FROM `student` WHERE `server_id` = {server_id} AND `discord_id` = {member_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def getEleveInfo(conn, member_id, server_id):
+        sql = f"SELECT `discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `debat`, `apprendre`, `micromacro` FROM `student` WHERE `server_id` = {server_id} AND `discord_id` = {member_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def setEleveInfo(conn, member_id, server_id, riot_id, pseudo, poste, debat, apprendre, style):
+        sql = f"INSERT INTO `student`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `debat`, `apprendre`, `micromacro`) VALUES ({member_id}, {server_id}, '{riot_id}', '{pseudo}', {poste}, {debat}, {apprendre}, {style})  ON DUPLICATE KEY UPDATE `server_id` = {server_id}, `riot_id` = '{riot_id}', `pseudo` = '{pseudo}', `poste` = {poste}, `debat` = {debat}, `apprendre` = {apprendre}, `micromacro` = {style};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)

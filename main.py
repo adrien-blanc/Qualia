@@ -203,16 +203,8 @@ async def  on_raw_reaction_remove(payload):
 @client.event
 async def on_raw_reaction_add(payload):
     conn = MysqlDef.connectionBDD()
-    serveur_id = payload.guild_id
-
-    with open('/home/Production/Qualia/server.json',"r") as f:
-        data = json.load(f)
-        f.close()
-
-    for c in data[f"{serveur_id}"]["mentor"]:
-        if str(payload.message_id) == c:
-            await payload.member.send(data[f"{serveur_id}"]["mentor"][c])
-    
+    serveur_id = 564860126448713750#payload.guild_id
+    guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
 
     messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
 
@@ -492,7 +484,7 @@ async def on_raw_reaction_add(payload):
                             divFlex = my_ranked_stats[i]['rank']
                     
                     
-                    msgConfirmation = await Message.confirmePseudo(payload.member, pseudo, eloSolo, divSolo, eloFlex, divFlex)
+                    msgConfirmation = await Message.confirmePseudoMentor(payload.member, pseudo, eloSolo, divSolo, eloFlex, divFlex)
 
                     def checkEmoji(reaction, user):
                         emoji_list = ["✅", "❌"]
@@ -549,7 +541,7 @@ async def on_raw_reaction_add(payload):
                 msgNombre = await Message.mentorNombre(payload.member)
 
                 def checkEmoji(reaction, user):
-                    emoji_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
+                    emoji_list = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
                     return payload.user_id == user.id and msgNombre.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
 
                 reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
@@ -566,12 +558,59 @@ async def on_raw_reaction_add(payload):
                     nbr = 4
                 elif reaction.emoji == "5️⃣":
                     nbr = 5
+                elif reaction.emoji == "6️⃣":
+                    nbr = 6
+                elif reaction.emoji == "7️⃣":
+                    nbr = 7
+                elif reaction.emoji == "8️⃣":
+                    nbr = 8
+                elif reaction.emoji == "9️⃣":
+                    nbr = 9
+
+                
+                #-----------------------------------------------#
+                #              Procédure Pedagogue              #
+                #-----------------------------------------------#
+                
+                msgPeda = await Message.mentorPeda(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["✅", "➕", "❌"]
+                    return payload.user_id == user.id and msgPeda.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                peda = 0
+                if reaction.emoji == "✅":
+                    peda = 2
+                elif reaction.emoji == "➕":
+                    peda = 1
+                elif reaction.emoji == "❌":
+                    peda = 0
+
+                #-------------------------------------------------#
+                #              Procédure Micro/Macro              #
+                #-------------------------------------------------#
+                
+                msgMicroMacro = await Message.mentorMicroMacro(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["0️⃣", "1️⃣", "2️⃣"]
+                    return payload.user_id == user.id and msgMicroMacro.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                style = 0
+                if reaction.emoji == "0️⃣":
+                    style = 0
+                elif reaction.emoji == "1️⃣":
+                    style = 1
+                elif reaction.emoji == "2️⃣":
+                    style = 2
 
                 #-------------------------------------------------#
                 #              Inscription du mentor              #
                 #-------------------------------------------------#
-
-                guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
 
                 elo = 0
                 div = 0
@@ -590,7 +629,7 @@ async def on_raw_reaction_add(payload):
                     div = await getDiv(divSolo)
                     divTotal = await calculUserElo(elo, div)
                 
-                MysqlDef.addMentor(conn, payload.member.id, serveur_id, me['id'], pseudo, divTotal, poste, nbr)
+                MysqlDef.addMentor(conn, payload.member.id, serveur_id, me['id'], pseudo, divTotal, poste, nbr, peda, style)
                 
                 channels = MysqlDef.getMentorChannels(conn, serveur_id)
 
@@ -602,7 +641,11 @@ async def on_raw_reaction_add(payload):
                 for channel in channels:
                     chan = client.get_channel(channel[0])
                     
-                    msgMentor = await Message.newMentor(chan, payload.member.name,  pseudo, eloName, divName, posteName, nbr)
+                    msgMentor = await Message.newMentor(chan, payload.member.name,  pseudo, eloName, divName, posteName, nbr, style)
+
+
+                role = discord.utils.get(guild.roles, name = 'mentor')
+                await payload.member.add_roles(role)
 
                 msgFin = await Message.mentorFin(payload.member)
 
@@ -628,13 +671,318 @@ async def on_raw_reaction_add(payload):
                 
 
 
-
-
-
-
         if payload.emoji.name == "📚":
-            pass
-    
+            msgInit = await Message.studentInit(payload.member)
+
+            def checkEmoji(reaction, user):
+                emoji_list = ["✅", "❌"]
+                return payload.user_id == user.id and msgInit.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+            reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+            if reaction.emoji == "❌":
+                await msgInscr.delete()
+                conn.close()
+                return
+            else:
+
+                #---------------------------------------------#
+                #              Procédure Pseudo               #
+                #---------------------------------------------#
+
+                msgPseudo = await Message.studentPseudo(payload.member)
+
+                def check(m):
+                    return m.author.id == payload.member.id and m.channel == payload.member.dm_channel
+
+                try:
+                    msgUser = await client.wait_for('message', timeout=300, check = check)
+                except asyncio.TimeoutError:
+                    await payload.member.send('Tu n\'as pas répondu dans les temps! Recommence la procédure depuis le début.')
+                    await msgInscr.delete()
+                    await msgPseudo.delete()
+                    conn.close()
+                    return
+                else:
+                    pseudo = msgUser.content
+
+                try:
+                    me = lol_watcher.summoner.by_name(my_region, f"{pseudo}")
+                    my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+
+                    eloSolo = None
+                    divSolo = None
+                    eloFlex = None
+                    divFlex = None
+
+                    for i in range(len(my_ranked_stats)) : 
+                        if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                            eloSolo = my_ranked_stats[i]['tier']
+                            divSolo = my_ranked_stats[i]['rank']
+                        if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                            eloFlex = my_ranked_stats[i]['tier']
+                            divFlex = my_ranked_stats[i]['rank']
+                    
+                    
+                    msgConfirmation = await Message.confirmePseudostudent(payload.member, pseudo, eloSolo, divSolo, eloFlex, divFlex)
+
+                    def checkEmoji(reaction, user):
+                        emoji_list = ["✅", "❌"]
+                        return payload.user_id == user.id and msgConfirmation.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                    reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                    if reaction.emoji == "❌":
+                        await msgInscr.delete()
+                        await msgPseudo.delete()
+                        await msgConfirmation.delete()
+                        conn.close()
+                        return
+
+                except ApiError as error:
+                    msgError = await Message.errorPseudo(payload.member)
+
+                    await asyncio.sleep(10)
+                    await msgError.delete()
+                    await msgInscr.delete()
+                    await msgPseudo.delete()
+                    await msgConfirmation.delete()
+                    conn.close()
+                    return
+
+                #--------------------------------------------#
+                #              Procédure Poste               #
+                #--------------------------------------------#
+                
+                msgPoste = await Message.studentPoste(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["<:Top:864176960493584455>", "<:Jungle:864176942169325579>", "<:Mid:864176925719134229>", "<:Adc:864176890692370472>", "<:Supp:864176867497476107>"]
+                    return payload.user_id == user.id and msgPoste.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                poste = 0
+                if reaction.emoji.name == "Top":
+                    poste = 0
+                elif reaction.emoji.name == "Jungle":
+                    poste = 1
+                elif reaction.emoji.name == "Mid":
+                    poste = 2
+                elif reaction.emoji.name == "Adc":
+                    poste = 3
+                elif reaction.emoji.name == "Supp":
+                    poste = 4
+
+                
+
+                #-------------------------------------------#
+                #              Procédure Debat              #
+                #-------------------------------------------#
+                
+                msgDebat = await Message.studentDebat(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["0️⃣", "1️⃣"]
+                    return payload.user_id == user.id and msgDebat.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+
+                debat = 0
+                if reaction.emoji == "0️⃣":
+                    debat = 1
+                elif reaction.emoji == "1️⃣":
+                    debat = 0
+
+                
+
+                #-----------------------------------------------#
+                #              Procédure Apprendre              #
+                #-----------------------------------------------#
+
+                msgAppendre = await Message.studentApprendre(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["0️⃣", "1️⃣"]
+                    return payload.user_id == user.id and msgAppendre.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+
+                apprendre = 0
+                if reaction.emoji == "0️⃣":
+                    apprendre = 0
+                elif reaction.emoji == "1️⃣":
+                    apprendre = 1
+
+
+                #-------------------------------------------#
+                #              Procédure Style              #
+                #-------------------------------------------#
+
+                msgStyle = await Message.studentStyle(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["0️⃣", "1️⃣", "2️⃣"]
+                    return payload.user_id == user.id and msgStyle.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+
+                style = 0
+                if reaction.emoji == "0️⃣":
+                    style = 0
+                elif reaction.emoji == "1️⃣":
+                    style = 1
+                elif reaction.emoji == "2️⃣":
+                    style = 2
+
+                MysqlDef.setEleveInfo(conn, payload.member.id, serveur_id, me['id'], pseudo, poste, debat, apprendre, style)
+
+                channels = MysqlDef.getMentorChannels(conn, serveur_id)
+
+                posteName = await getPosteName(poste)
+
+                elo = 0
+                div = 0
+                
+                if eloSolo is None:
+                    if eloFlex is None:
+                        divTotal = 0
+                    else:
+                        role = discord.utils.get(guild.roles, name = f"{eloFlex.capitalize()}")
+                        elo = await getElo(eloFlex.capitalize())
+                        div = await getDiv(divFlex)
+                        divTotal = await calculUserElo(elo, div)
+                else:
+                    role = discord.utils.get(guild.roles, name = f"{eloSolo.capitalize()}")
+                    elo = await getElo(eloSolo.capitalize())
+                    div = await getDiv(divSolo)
+                    divTotal = await calculUserElo(elo, div)
+
+                eloName = await getEloName(elo)
+                divName = await getDivName(div)
+
+                for channel in channels:
+                    chan = client.get_channel(channel[1])
+                    
+                    msgNewStudent = await Message.newStudent(chan, payload.member.name,  pseudo, eloName, divName, posteName, debat, apprendre, style)
+
+
+                role = discord.utils.get(guild.roles, name = 'élève')
+                await payload.member.add_roles(role)
+
+                msgFin = await Message.mentorFin(payload.member)
+
+                def checkEmoji(reaction, user):
+                    emoji_list = ["✅"]
+                    return payload.user_id == user.id and msgFin.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+                reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+                if reaction.emoji == "✅":
+                    await msgFin.delete()
+
+                with open('/home/Production/Qualia/server.json',"r") as f:
+                    data = json.load(f)
+                    f.close()
+
+                data[f"{serveur_id}"]["student"][msgNewStudent.id] = payload.member.id
+            
+                with open("/home/Production/Qualia/server.json", "w") as file:
+                    json.dump(data, file, indent=4)
+
+    with open('/home/Production/Qualia/server.json',"r") as f:
+        data = json.load(f)
+        f.close()
+                
+    for c in data[f"{serveur_id}"]["mentor"]:
+        if str(payload.message_id) == c:
+            check = MysqlDef.checkEleveExist(conn, payload.member.id, serveur_id)
+            for ch in check:
+                if ch[0] == 0:
+                    await payload.member.send("Vous devez vous inscrire en tant qu'élève pour pouvoir choisir un mentor.")
+                    return
+
+            infos = MysqlDef.getEleveInfo(conn, payload.member.id, serveur_id)
+
+            for info in infos:
+                riot_id = info[2]
+                pseudo = info[3]
+                poste = await getPosteName(info[4])
+                debat = info[5]
+                apprendre = await getInfo(info[6])
+                style = info[7]
+
+            my_ranked_stats = lol_watcher.league.by_summoner(my_region, riot_id)
+
+            eloSolo = None
+            divSolo = None
+            eloFlex = None
+            divFlex = None
+
+            for i in range(len(my_ranked_stats)) : 
+                if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                    eloSolo = my_ranked_stats[i]['tier']
+                    divSolo = my_ranked_stats[i]['rank']
+                if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                    eloFlex = my_ranked_stats[i]['tier']
+                    divFlex = my_ranked_stats[i]['rank']
+            
+            mentor = guild.get_member(int(data[f"{serveur_id}"]["mentor"][c]))
+
+            msgMentor = await Message.studentInfo(mentor, payload.member, pseudo, eloSolo, divSolo, eloFlex, divFlex, poste, debat, apprendre, style)
+
+            def checkEmoji(reaction, user):
+                emoji_list = ["✅","❌"]
+                return mentor.id == user.id and msgMentor.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+            reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+            if reaction.emoji == "❌":
+                await Message.studentRefus(payload.member)
+            elif reaction.emoji == "✅":
+                
+                channels = MysqlDef.getMentorat(conn, serveur_id)
+
+                for chan in channels:
+                    channelMentor = guild.get_channel(chan[2])
+                    channelStudent = guild.get_channel(chan[3])
+
+                with open('/home/Production/Qualia/server.json',"r") as f:
+                    data = json.load(f)
+                    f.close()
+
+                for c in data[f"{serveur_id}"]["student"]:
+                    if str(payload.member.id) == c:
+                        msgToDelete = await channelStudent.fetch_message(payload.message_id)
+                        await msgToDelete.delete()
+
+                msgToDelete = await channelMentor.fetch_message(payload.message_id)
+                await msgToDelete.delete()
+                
+
+                await Message.studentAccept(payload.member)
+                categorie = MysqlDef.getCategoriMentor(conn, serveur_id)
+                for cate in categorie:
+                    category = guild.get_channel(cate[0])
+
+                roleMentor = discord.utils.get(guild.roles, name="mentor")
+                roleEleve = discord.utils.get(guild.roles, name="élève")
+
+                channelGeneral = await guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
+                await channelGeneral.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                voiceChannel = await guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
+                await voiceChannel.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
     conn.close()
             
 
@@ -1030,9 +1378,12 @@ async def initMentorat(ctx):
 
     channel = await ctx.guild.create_text_channel('📝 Seek-mentoring', category=category)
     channelMentor = await ctx.guild.create_text_channel('📘 Seek-mentor', category=category)
-    await channelMentor.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+    await channelMentor.set_permissions(roleEleve, read_messages=True, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+    await channelMentor.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
     channelMentee = await ctx.guild.create_text_channel('📚 Seek-mentee', category=category)
-    await channelMentee.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+    await channelMentee.set_permissions(roleMentor, read_messages=True, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+    await channelMentee.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+    
 
     embed=discord.Embed(title="Bienvenue sur le système de Mentorat du serveur", color = discord.Color(0xFDFF00))
     embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
@@ -1422,7 +1773,18 @@ async def updateTeamElo(team_id):
     conn.close()
 
 
+#------------------------------------------#
+#                Get Débat                 #
+#------------------------------------------#
+async def getInfo(nbr):
+    rst = ""
 
+    if nbr == 0:
+        rst = "entendre"
+    elif nbr == 1:
+        rst = "voir"
+
+    return rst
 
 
 
