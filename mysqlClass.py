@@ -196,6 +196,8 @@ class MysqlDef():
         return cursor.fetchall()
 
     
+
+    
     #------------------------------------------------#
     #                 User functions                 #
     #------------------------------------------------#
@@ -239,6 +241,27 @@ class MysqlDef():
         cursor.execute(sql)
         conn.commit()
 
+    def checkMentorExist(conn, member_id, server_id):
+        sql = f"SELECT count(*) FROM `mentor` WHERE `server_id` = {server_id} AND `discord_id` = {member_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def getMentorInfo(conn, member_id, server_id):
+        sql = f"SELECT `discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `micromacro` FROM `mentor` WHERE `server_id` = {server_id} AND `discord_id` = {member_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def deleteMentor(conn, mentor, serveur_id):
+        sql = f"DELETE FROM `mentor` WHERE `server_id`={serveur_id} AND `discord_id` = {mentor};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
     #--------------------------------------------------#
     #                 Elèves functions                 #
     #--------------------------------------------------#
@@ -259,6 +282,13 @@ class MysqlDef():
 
     def setEleveInfo(conn, member_id, server_id, riot_id, pseudo, poste, debat, apprendre, style):
         sql = f"INSERT INTO `student`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `debat`, `apprendre`, `micromacro`) VALUES ({member_id}, {server_id}, '{riot_id}', '{pseudo}', {poste}, {debat}, {apprendre}, {style})  ON DUPLICATE KEY UPDATE `server_id` = {server_id}, `riot_id` = '{riot_id}', `pseudo` = '{pseudo}', `poste` = {poste}, `debat` = {debat}, `apprendre` = {apprendre}, `micromacro` = {style};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def deleteStudent(conn, student, serveur_id):
+        sql = f"DELETE FROM `student` WHERE `server_id`={serveur_id} AND `discord_id` = {student};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)

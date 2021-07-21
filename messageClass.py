@@ -146,15 +146,26 @@ class Message():
     #              Message User               #
     #-----------------------------------------#
 
-    async def userRecap(channelSeekTeam, member_name, pseudo, poste, elo, div, team):
+    async def Recap(channel, member_name, pseudo, posteName, eloSolo, divSolo, eloFlex, divFlex, divName, team):
         embed=discord.Embed(title="Nouveau joueur")
         embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name=f"Un nouveau joueur arrive parmi nous, c'est **{member_name}**", value=f"\n > **Pseudo** : {pseudo}\n > **Poste** : {posteName}\n\n", inline=False)
+        if (eloSolo is None) and (eloFlex is not None) :
+            embed.add_field(name="Son rang :", value=f" > Solo/Duo | **Unranked**\n > Flex | **{eloFlex} {divFlex}**\n", inline=False)
+        elif (eloSolo is not None) and (eloFlex is None) :
+            embed.add_field(name="Son rang :", value=f" > Solo/Duo | **{eloSolo} {divSolo}**\n > Flex | **Unranked**\n", inline=False)
+        elif (eloSolo is not None) and (eloFlex is not None) :
+            embed.add_field(name="Son rang :", value=f" > Solo/Duo | **{eloSolo} {divSolo}**\n > Flex | **{eloFlex} {divFlex}**\n", inline=False)
+        else:
+            embed.add_field(name="Son rang :", value=f" > Solo/Duo | **Unranked**\n > Flex | **Unranked**\n", inline=False)
+
         if team == 1:
-            embed.add_field(name=f"Un nouveau joueur arrive parmi nous, c'est **{member_name}**", value=f"\n > **Pseudo** : {pseudo}\n > **Poste** : {poste}\n > **Rang** : {elo} {div}\n > Il a fait le choix de rejoindre une **équipe** !", inline=False)
+            embed.add_field(name=f"Ses envies :", value=f" > Il a fait le choix de rejoindre une **équipe** !", inline=False)
         elif team == 0:
-            embed.add_field(name=f"Un nouveau joueur arrive parmi nous, c'est **{member_name}**", value=f"\n > **Pseudo** : {pseudo}\n > **Poste** : {poste}\n > **Rang** : {elo} {div}\n > Souhaite faire des games **communautaires** !", inline=False)
+            embed.add_field(name=f"Ses envies :", value=f" > Souhaite faire des games **communautaires** !", inline=False)
+        
         embed.set_footer(text = f"N'hésitez pas à le contacter !")
-        msg = await channelSeekTeam.send(embed = embed)
+        msg = await channel.send(embed = embed)
         return msg
 
     #---------------------------------------------#
@@ -304,6 +315,20 @@ class Message():
         await msg.add_reaction("❌")
         return msg
 
+    async def mentorRefus(member):
+        embed=discord.Embed(title="Nous sommes désolé")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Nous sommes désolé mais l'élève que vous avez demandé n'a pas accepté votre demande.", value="Vous pouvez toujours demander à un autre élève s'il a besoin d'aide.", inline=False)
+        await member.send(embed = embed)
+
+    async def mentorAccept(member):
+        embed=discord.Embed(title="Bravo")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="L'élève que vous avez demandé a accepté votre demande !", value="Un channel vocal et un channel écrit a été crée pour vous deux.", inline=False)
+        await member.send(embed = embed)
+
+
+
     #-------------------------------------#
     #               STUDENT               #
     #-------------------------------------#
@@ -419,4 +444,23 @@ class Message():
         embed.set_footer(text = f"Si vous souhaitez mentorer {member_name} : ✅")
         msg = await chan.send(embed = embed)
         await msg.add_reaction("✅")
+        return msg
+
+    async def mentorInfo(mentor, member, pseudo, eloSolo, divSolo, eloFlex, divFlex, poste, style):
+        if style == 0:
+            styleName = "micro"
+        elif style == 1:
+            styleName = "macro"
+        elif style == 2:
+            styleName = "micro / macro"
+
+        embed=discord.Embed(title=f"Un mentor souhaite vous aider !")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name=f"Voici les informations à propos de {member.name} :", value=f"> Pseudo : **{pseudo}**\n > Rang Solo : **{eloSolo} {divSolo}**\n > Rang Flex : **{eloFlex} {divFlex}**\n > Main poste : **{poste}**\n > Il veux t'apprendre la **{styleName}**", inline=False)
+        pseudo = pseudo.replace(" ", "+")
+        embed.add_field(name=f"Voici son OP.GG", value=f"> https://euw.op.gg/summoner/userName={pseudo}", inline=False)
+        embed.set_footer(text = f"Accepter : ✅ | Refuser : ❌")
+        msg = await mentor.send(embed = embed)
+        await msg.add_reaction("✅")
+        await msg.add_reaction("❌")
         return msg

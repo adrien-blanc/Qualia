@@ -116,6 +116,15 @@ BLACKLIST_IDS = vars.BLACKLIST_IDS
 
 
 #------------------------------------------------#
+#                on member join                  #
+#------------------------------------------------#
+
+@client.event
+async def on_member_join(member):
+    welcomeRole = discord.utils.get(member.guild.roles,name="Qualia") # Add spécifique rôle when member arive on serve.
+    await member.add_roles(welcomeRole)
+
+#------------------------------------------------#
 #           on voice server update               #
 #------------------------------------------------#
 
@@ -176,13 +185,8 @@ async def  on_raw_reaction_remove(payload):
     messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
 
     for mr in messageReaction:
-        msgInsc_id = mr[0]
         msgRole_id = mr[1]
 
-    if (payload.message_id == msgInsc_id) and (payload.user_id != 863087982159724564):
-        if payload.emoji.name == "📝":
-            pass
-            #await payload.member.dm_channel.purge()
 
     if (payload.message_id == msgRole_id) and (payload.user_id != 863087982159724564):
         guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
@@ -203,7 +207,10 @@ async def  on_raw_reaction_remove(payload):
 @client.event
 async def on_raw_reaction_add(payload):
     conn = MysqlDef.connectionBDD()
-    serveur_id = 564860126448713750#payload.guild_id
+    if payload.guild_id is None:
+        serveur_id = 564860126448713750 # Serveur de Dev
+    else: 
+        serveur_id = payload.guild_id
     guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
 
     messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
@@ -383,17 +390,17 @@ async def on_raw_reaction_add(payload):
 
                 try:
                     channelAdmin = client.get_channel(864909655259217940)
-                    channelSeekTeam = client.get_channel(865472953152045096)
+                    channelRecap = client.get_channel(867131611325267969)
                     posteName = await getPosteName(poste)
                     eloName = await getEloName(elo)
                     divName = await getDivName(div)
                     if reaction.emoji == "1️⃣":
-                        await Message.userRecap(channelSeekTeam,payload.member.name, pseudo, posteName, eloName, divName, 1)
                         await Message.adminRecap(channelAdmin, payload.member.id, payload.member.name, me['id'], pseudo, posteName, eloName, divName, 1)
+                        await Message.Recap(channelRecap, payload.member.name, pseudo, posteName, eloSolo, divSolo, eloFlex, divFlex, divName, 1)
                         MysqlDef.setInfoUser(conn, payload.member.id, serveur_id, me['id'], pseudo, poste, divTotal, 0, 1)
                     elif reaction.emoji == "2️⃣":
-                        await Message.userRecap(channelSeekTeam,payload.member.name, pseudo, posteName, eloName, divName, 0)
                         await Message.adminRecap(channelAdmin, payload.member.id, payload.member.name, me['id'], pseudo, posteName, eloName, divName, 0)
+                        await Message.Recap(channelRecap, payload.member.name, pseudo, posteName, eloSolo, divSolo, eloFlex, divFlex, divName, 0)
                         MysqlDef.setInfoUser(conn, payload.member.id, serveur_id, me['id'], pseudo, poste, divTotal, 0, 0)
                 except:
                     msgError = await Message.error(payload.member)
@@ -893,6 +900,7 @@ async def on_raw_reaction_add(payload):
                 with open("/home/Production/Qualia/server.json", "w") as file:
                     json.dump(data, file, indent=4)
 
+
     with open('/home/Production/Qualia/server.json',"r") as f:
         data = json.load(f)
         f.close()
@@ -955,12 +963,17 @@ async def on_raw_reaction_add(payload):
                     f.close()
 
                 for c in data[f"{serveur_id}"]["student"]:
-                    if str(payload.member.id) == c:
-                        msgToDelete = await channelStudent.fetch_message(payload.message_id)
+                    if payload.member.id == data[f"{serveur_id}"]["student"][c]:
+                        msgToDelete = await channelStudent.fetch_message(c)
                         await msgToDelete.delete()
+                        data[f"{serveur_id}"]["student"].pop(f"{c}")
+                        break
 
                 msgToDelete = await channelMentor.fetch_message(payload.message_id)
+                data[f"{serveur_id}"]["mentor"].pop(f"{payload.message_id}")
                 await msgToDelete.delete()
+                with open("/home/Production/Qualia/server.json", "w") as file:
+                    json.dump(data, file, indent=4)
                 
 
                 await Message.studentAccept(payload.member)
@@ -973,13 +986,110 @@ async def on_raw_reaction_add(payload):
 
                 channelGeneral = await guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
                 await channelGeneral.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
-                await channelGeneral.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                
                 voiceChannel = await guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
                 await voiceChannel.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+
+
+    with open('/home/Production/Qualia/server.json',"r") as f:
+        data = json.load(f)
+        f.close()
+                
+    for c in data[f"{serveur_id}"]["student"]:
+        if str(payload.message_id) == c:
+            check = MysqlDef.checkMentorExist(conn, payload.member.id, serveur_id)
+            for ch in check:
+                if ch[0] == 0:
+                    await payload.member.send("Vous devez vous inscrire en tant que mentor pour pouvoir choisir un élève.")
+                    return
+
+            infos = MysqlDef.getMentorInfo(conn, payload.member.id, serveur_id) #`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `micromacro`
+
+            for info in infos:
+                riot_id = info[2]
+                pseudo = info[3]
+                poste = await getPosteName(info[4])
+                style = info[5]
+
+            my_ranked_stats = lol_watcher.league.by_summoner(my_region, riot_id)
+
+            eloSolo = None
+            divSolo = None
+            eloFlex = None
+            divFlex = None
+
+            for i in range(len(my_ranked_stats)) : 
+                if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                    eloSolo = my_ranked_stats[i]['tier']
+                    divSolo = my_ranked_stats[i]['rank']
+                if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                    eloFlex = my_ranked_stats[i]['tier']
+                    divFlex = my_ranked_stats[i]['rank']
+            
+            student = guild.get_member(int(data[f"{serveur_id}"]["student"][c]))
+
+            msgStudent = await Message.mentorInfo(student, payload.member, pseudo, eloSolo, divSolo, eloFlex, divFlex, poste, style)
+
+            def checkEmoji(reaction, user):
+                emoji_list = ["✅","❌"]
+                return student.id == user.id and msgStudent.id == reaction.message.id and (str(reaction.emoji) in emoji_list)
+
+            reaction, user = await client.wait_for("reaction_add", check = checkEmoji)
+
+            if reaction.emoji == "❌":
+                await Message.mentorRefus(payload.member)
+            elif reaction.emoji == "✅":
+                
+                channels = MysqlDef.getMentorat(conn, serveur_id)
+
+                for chan in channels:
+                    channelMentor = guild.get_channel(chan[2])
+                    channelStudent = guild.get_channel(chan[3])
+
+                with open('/home/Production/Qualia/server.json',"r") as f:
+                    data = json.load(f)
+                    f.close()
+
+                for c in data[f"{serveur_id}"]["mentor"]:
+                    if payload.member.id == data[f"{serveur_id}"]["mentor"][c]:
+                        msgToDelete = await channelMentor.fetch_message(c)
+                        await msgToDelete.delete()
+                        data[f"{serveur_id}"]["mentor"].pop(f"{c}")
+                        break
+
+                msgToDelete = await channelStudent.fetch_message(payload.message_id)
+                data[f"{serveur_id}"]["student"].pop(f"{payload.message_id}")
+                await msgToDelete.delete()
+                with open("/home/Production/Qualia/server.json", "w") as file:
+                    json.dump(data, file, indent=4)
+                
+
+                await Message.mentorAccept(payload.member)
+                categorie = MysqlDef.getCategoriMentor(conn, serveur_id)
+                for cate in categorie:
+                    category = guild.get_channel(cate[0])
+
+                roleMentor = discord.utils.get(guild.roles, name="mentor")
+                roleEleve = discord.utils.get(guild.roles, name="élève")
+
+                channelGeneral = await guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{student.name}", category = category)
+                await channelGeneral.set_permissions(student, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                
+                voiceChannel = await guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{student.name}", category = category)
+                await voiceChannel.set_permissions(student, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
@@ -1029,6 +1139,45 @@ async def purge(ctx):
         await ctx.channel.send("Vous n'avez pas la permission d'utiliser cette commande.")
     else:
         await ctx.channel.purge()
+
+#---------------------------------------#
+#           Delete mentor               #
+#---------------------------------------#
+
+@client.command()
+async def deleteMentor(ctx, person : discord.Member = None):
+    if ctx.author.id not in WHITELIST_IDS:
+        await ctx.channel.send("Vous n'avez pas la permission d'utiliser cette commande.")
+    else:
+        if person is None:
+            await ctx.send("Vous n'avez pas renseigné le joueur.")
+        else:
+            conn = MysqlDef.connectionBDD()
+            server_id = ctx.guild.id
+            MysqlDef.deleteMentor(conn, person.id, server_id)
+            roleMentor = discord.utils.get(ctx.guild.roles, name="mentor")
+            await person.remove_roles(roleMentor)
+            await ctx.channel.send(f"{person.name} a bien été retiré des mentors.")
+
+#----------------------------------------#
+#           Delete student               #
+#----------------------------------------#
+
+@client.command()
+async def deleteStudent(ctx, person : discord.Member = None):
+    if ctx.author.id not in WHITELIST_IDS:
+        await ctx.channel.send("Vous n'avez pas la permission d'utiliser cette commande.")
+    else:
+        if person is None:
+            await ctx.send("Vous n'avez pas renseigné le joueur.")
+        else:
+            conn = MysqlDef.connectionBDD()
+            server_id = ctx.guild.id
+            MysqlDef.deleteStudent(conn, person.id, server_id)
+            roleStudent = discord.utils.get(ctx.guild.roles, name="élève")
+            await person.remove_roles(roleStudent)
+            await ctx.channel.send(f"{person.name} a bien été retiré des élèves.")
+
 
 
 #-------------------------------------------#
@@ -1380,7 +1529,7 @@ async def initMentorat(ctx):
     channelMentor = await ctx.guild.create_text_channel('📘 Seek-mentor', category=category)
     await channelMentor.set_permissions(roleEleve, read_messages=True, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
     await channelMentor.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
-    channelMentee = await ctx.guild.create_text_channel('📚 Seek-mentee', category=category)
+    channelMentee = await ctx.guild.create_text_channel('📚 Seek-élève', category=category)
     await channelMentee.set_permissions(roleMentor, read_messages=True, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
     await channelMentee.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
     
