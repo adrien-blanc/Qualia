@@ -68,7 +68,7 @@ class MysqlDef():
         conn.commit()
 
     def getMessageReaction(conn, serveur_id):
-        sql = f"SELECT `serveur`.`reactionMessage`, `serveur`.`reactionRole`, `serveur`.`reactionMentorat` FROM `serveur` WHERE `serveur`.`serveur_id` = {serveur_id};"
+        sql = f"SELECT `serveur`.`reactionMessage`, `serveur`.`reactionRole`, `serveur`.`reactionMentorat`, `serveur`.`reactionRoleJeu` FROM `serveur` WHERE `serveur`.`serveur_id` = {serveur_id};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -79,6 +79,15 @@ class MysqlDef():
 
     def setMessageRole(conn, serveur_id, msgReaction_id):
         sql = f"UPDATE `serveur` SET `reactionRole` = {msgReaction_id} WHERE `serveur_id` = {serveur_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    #  Message Réaction pour les rôles Jeu #
+
+    def setMessageRoleJeu(conn, serveur_id, msgReaction_id):
+        sql = f"UPDATE `serveur` SET `reactionRoleJeu` = {msgReaction_id} WHERE `serveur_id` = {serveur_id};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)

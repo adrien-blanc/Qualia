@@ -186,6 +186,8 @@ async def  on_raw_reaction_remove(payload):
 
     for mr in messageReaction:
         msgRole_id = mr[1]
+        msgRoleJeu_id = mr[3]
+
 
 
     if (payload.message_id == msgRole_id) and (payload.user_id != 863087982159724564):
@@ -195,6 +197,27 @@ async def  on_raw_reaction_remove(payload):
 
         if payload.event_type == "REACTION_REMOVE":
             await member.remove_roles(role)
+
+    if (payload.message_id == msgRoleJeu_id) and (payload.user_id != 863087982159724564):
+        guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
+        member = discord.utils.get(guild.members, id=payload.user_id)
+        role = None
+        
+        if payload.emoji.name == "LeagueofLegends":
+            role = discord.utils.get(guild.roles, name = "League of Legends")
+        elif payload.emoji.name == "Valorant":
+            role = discord.utils.get(guild.roles, name = "Valorant")
+        elif payload.emoji.name == "TFT":
+            role = discord.utils.get(guild.roles, name = "TFT")
+        elif payload.emoji.name == "CSGO":
+            role = discord.utils.get(guild.roles, name = "CS:GO")
+        elif payload.emoji.name == "RocketLeague":
+            role = discord.utils.get(guild.roles, name = "Rocket League")
+        elif payload.emoji.name == "Hearthstone":
+            role = discord.utils.get(guild.roles, name = "Hearthstone")
+        elif payload.emoji.name == "Chess":
+            role = discord.utils.get(guild.roles, name = "Chess")
+        await member.remove_roles(role)
 
     conn.close()
     
@@ -208,7 +231,7 @@ async def  on_raw_reaction_remove(payload):
 async def on_raw_reaction_add(payload):
     conn = MysqlDef.connectionBDD()
     if payload.guild_id is None:
-        serveur_id = 564860126448713750 # Serveur de Dev
+        serveur_id = 862779743882313748 # Serveur de Dev
     else: 
         serveur_id = payload.guild_id
     guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
@@ -219,12 +242,37 @@ async def on_raw_reaction_add(payload):
         msgInsc_id = mr[0]
         msgRole_id = mr[1]
         msgMentorat_id = mr[2]
+        msgRoleJeu_id = mr[3]
 
     if (payload.message_id == msgRole_id) and (payload.user_id != 863087982159724564):
         guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
         role = discord.utils.get(guild.roles, name = f"{payload.emoji.name}")
         if payload.event_type == "REACTION_ADD":
             await payload.member.add_roles(role)
+
+        
+    
+    if (payload.message_id == msgRoleJeu_id) and (payload.user_id != 863087982159724564):
+        guild = discord.utils.find(lambda g : g.id == payload.guild_id, client.guilds)
+        role = None
+        if payload.emoji.name == "LeagueofLegends":
+            role = discord.utils.get(guild.roles, name = "League of Legends")
+        elif payload.emoji.name == "Valorant":
+            role = discord.utils.get(guild.roles, name = "Valorant")
+        elif payload.emoji.name == "TFT":
+            role = discord.utils.get(guild.roles, name = "TFT")
+        elif payload.emoji.name == "CSGO":
+            role = discord.utils.get(guild.roles, name = "CS:GO")
+        elif payload.emoji.name == "RocketLeague":
+            role = discord.utils.get(guild.roles, name = "Rocket League")
+        elif payload.emoji.name == "Hearthstone":
+            role = discord.utils.get(guild.roles, name = "Hearthstone")
+        elif payload.emoji.name == "Chess":
+            role = discord.utils.get(guild.roles, name = "Chess")
+        
+        await payload.member.add_roles(role)
+        
+        
 
     #--------------------------------------------------#
     #              Procédure inscription               #
@@ -1494,6 +1542,36 @@ async def initMessageRole(ctx):
 
         conn.close()
 
+
+#-------------------------------------------------------------#
+#           Initialise le message des rôles lol               #
+#-------------------------------------------------------------#
+
+@client.command()
+async def initMessageRoleJeux(ctx):
+    if ctx.author.id not in WHITELIST_IDS:
+        await ctx.channel.send("Vous n'avez pas la permission d'utiliser cette commande.")
+    else:
+        conn = MysqlDef.connectionBDD()
+        serveur_id = ctx.guild.id
+
+        await ctx.message.delete()
+
+        embed=discord.Embed(title="Choisissez vos jeux favoris !", color = discord.Color(0xFDFF00))
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name="Les différents jeux :", value="> <:LeagueofLegends:867442026060185640> League of Legends \n > <:Valorant:867429253506269205> Valorant \n > <:TFT:867438874975010826> TFT \n > <:CSGO:867439458982690856> CS:GO \n > <:RocketLeague:867439656198864907> Rocket League \n > <:Hearthstone:867431647459672074> HearthStone \n > <:Chess:867439802651901983> Chess \n", inline=False)
+        msg = await ctx.channel.send(embed = embed)
+        await msg.add_reaction("<:LeagueofLegends:867442026060185640>")
+        await msg.add_reaction("<:Valorant:867429253506269205>")
+        await msg.add_reaction("<:TFT:867438874975010826>")
+        await msg.add_reaction("<:CSGO:867439458982690856>")
+        await msg.add_reaction("<:RocketLeague:867439656198864907>")
+        await msg.add_reaction("<:Hearthstone:867431647459672074>")
+        await msg.add_reaction("<:Chess:867439802651901983>")
+
+        MysqlDef.setMessageRoleJeu(conn, serveur_id, msg.id)
+
+        conn.close()
 
 #--------------------------------------------------------------------#
 #           Initialise la catégorie pour le Mendatorat               #
