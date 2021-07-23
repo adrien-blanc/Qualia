@@ -204,7 +204,19 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
-    
+    def getTeamName(conn, id, server_id):
+        sql = f"SELECT name, categorie_id, channelGeneral_id, elo_moy FROM team WHERE id_team = {id} AND server_id = {server_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def changeTeamName(conn, id, name):
+        sql = f"UPDATE `team` SET `name`='{name}' WHERE id_team = {id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
 
     
     #------------------------------------------------#

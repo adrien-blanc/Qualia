@@ -438,7 +438,7 @@ async def on_raw_reaction_add(payload):
 
                 try:
                     channelAdmin = client.get_channel(864909655259217940)
-                    channelRecap = client.get_channel(867131611325267969)
+                    channelRecap = client.get_channel(867768457171566612)
                     posteName = await getPosteName(poste)
                     eloName = await getEloName(elo)
                     divName = await getDivName(div)
@@ -1403,6 +1403,48 @@ async def addJoueur(ctx, person : discord.Member = None, pseudo = None, poste: i
     else:
         await ctx.send("Vous n'avez pas les droits pour exécuter cette commande.")
 
+#------------------------------------------------#
+#                                                #
+#                Change Team Name                #
+#                                                #
+#------------------------------------------------#
+
+@client.command(brief="")
+async def teamName(ctx, id = None, name = None):
+    if ctx.author.id in WHITELIST_IDS:
+        if name is None:
+            await ctx.send("Vous devez renseigner un nom de team. | Ex : !teamName <id_team> \"<name>\"")
+        else:
+            if id is None :
+                await ctx.send("Vous devez renseigner l'ID de la team. | Ex : !teamName <id_team> \"<name>\"")
+            else:
+                conn = MysqlDef.connectionBDD()
+                serveur_id = ctx.guild.id
+
+                teamInfo = MysqlDef.getTeamName(conn, id, serveur_id)
+
+                for t in teamInfo:
+                    oldTeamName = t[0]
+                    categorie = client.get_channel(t[1])
+                    general = client.get_channel(t[2])
+
+                role = discord.utils.get(ctx.guild.roles, name=f"{oldTeamName}")
+
+                await role.edit(name = f"{name}")
+
+                await categorie.edit(name=f"{name}")
+
+                tag = name[0:3]
+
+                await general.edit(name=f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{tag}")
+
+                MysqlDef.changeTeamName(conn, id, name)
+
+                conn.close()
+
+                await ctx.send(f"La team **{oldTeamName}** s'appelle maintenant **{name}**")
+    else:
+        await ctx.send("Vous n'avez pas les droits pour exécuter cette commande.")
 
 #----------------------------------------------------#
 #                   Reset Mentorat                   #
@@ -1897,11 +1939,11 @@ async def updateOPGGTeam(guild, team_id):
                 nameTop = description["TOP"]["discordName"]
                 embed.add_field(name = f"TOP", value = f"{tagTop} ({nameTop})", inline=False)
 
-            if 'JGL' in description.keys():
-                idJgl = int(description["JGL"]["discordTag"])
+            if 'JUNGLE' in description.keys():
+                idJgl = int(description["JUNGLE"]["discordTag"])
                 tagJgl = guild.get_member(idJgl)
-                nameJgl = description["JGL"]["discordName"]
-                embed.add_field(name = f"JGL", value = f"{tagJgl} ({nameJgl})", inline=False)
+                nameJgl = description["JUNGLE"]["discordName"]
+                embed.add_field(name = f"JUNGLE", value = f"{tagJgl} ({nameJgl})", inline=False)
 
             if 'MID' in description.keys():
                 idMid = int(description["MID"]["discordTag"])
@@ -1915,11 +1957,11 @@ async def updateOPGGTeam(guild, team_id):
                 nameAdc = description["ADC"]["discordName"]
                 embed.add_field(name = f"ADC", value = f"{tagAdc} ({nameAdc})", inline=False)
 
-            if 'SUPP' in description.keys():
-                idSupp = int(description["SUPP"]["discordTag"])
+            if 'SUPPORT' in description.keys():
+                idSupp = int(description["SUPPORT"]["discordTag"])
                 tagSupp = guild.get_member(idSupp)
-                nameSupp = description["SUPP"]["discordName"]
-                embed.add_field(name = f"SUPP", value = f"{tagSupp} ({nameSupp})", inline=False)
+                nameSupp = description["SUPPORT"]["discordName"]
+                embed.add_field(name = f"SUPPORT", value = f"{tagSupp} ({nameSupp})", inline=False)
 
             await channelAAA.send(embed = embed)
 
