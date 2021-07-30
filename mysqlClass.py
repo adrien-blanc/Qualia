@@ -218,6 +218,13 @@ class MysqlDef():
         cursor.execute(sql)
         conn.commit()
 
+    def checkIfTeamEmpty(conn, team_id):
+        sql = f"SELECT count(*) FROM team INNER JOIN users ON (team.id_team != users.team OR users.team = team.id_team) WHERE users.team = {team_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     
     #------------------------------------------------#
     #                 User functions                 #
@@ -225,6 +232,13 @@ class MysqlDef():
 
     def setInfoUser(conn, discord_id, server_id, riot_id, pseudo, poste, div, team, search):
         sql = f"INSERT INTO `users`(`discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search`) VALUES ({discord_id}, {server_id}, '{riot_id}', '{pseudo}', {poste}, {div}, {team},{search}) ON DUPLICATE KEY UPDATE `server_id`={server_id}, `riot_id`='{riot_id}' , `pseudo`='{pseudo}', `poste`={poste}, `div`={div}, `team`={team}, `search`={search};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def delUser(conn, user_id):
+        sql = f"DELETE FROM `users` WHERE discord_id = {user_id}"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -243,6 +257,13 @@ class MysqlDef():
         cursor = conn.cursor()
         cursor.execute(sql)
         conn.commit()
+
+    def getAllUser(conn, serv_id):
+        sql = f"SELECT id_riot, discord_id, name, `div`, team FROM `users` WHERE `server_id` = {serv_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
 
     #--------------------------------------------------#
     #                 Mentor functions                 #

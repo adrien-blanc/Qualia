@@ -180,7 +180,10 @@ async def on_voice_state_update(member, before, after):
 @client.event
 async def  on_raw_reaction_remove(payload):
     conn = MysqlDef.connectionBDD()
-    serveur_id = payload.guild_id
+    if payload.guild_id is None:
+        serveur_id = 862779743882313748 # Serveur de Dev
+    else: 
+        serveur_id = payload.guild_id
 
     messageReaction = MysqlDef.getMessageReaction(conn, serveur_id)
 
@@ -353,7 +356,8 @@ async def on_raw_reaction_add(payload):
                         return
 
                 except ApiError as error:
-                    msgError = await Message.errorPseudo(payload.member)
+                    
+                    msgError = await Message.errorPseudo(payload.member, error)
 
                     await asyncio.sleep(10)
                     await msgError.delete()
@@ -1341,8 +1345,25 @@ async def addJoueur(ctx, person : discord.Member = None, pseudo = None, poste: i
 
             conn = MysqlDef.connectionBDD()
 
-            me = lol_watcher.summoner.by_name(my_region, f"{pseudo}")
-            my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+            try:
+
+                me = lol_watcher.summoner.by_name(my_region, f"{pseudo}")
+                my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+            except ApiError  as error:
+                if error.response.status_code == 400:
+                    await ctx.send(f"({error.response.status_code}) Bad Request : Vérifier le nom d'invocateur. | {error}")
+                elif error.response.status_code == 401:
+                    await ctx.send(f"({error.response.status_code}) Unauthorized : La clé API n'est pas renseignée. | {error}")
+                elif error.response.status_code == 403 :
+                    await ctx.send(f"({error.response.status_code}) Forbidden : La clé API n'est pas valide. | {error}")
+                elif error.response.status_code == 404  :
+                    await ctx.send(f"({error.response.status_code}) Not found : Le serveur n'a pas trouvé de match pour la requête demandée. | {error}")
+                elif error.response.status_code == 500  :
+                    await ctx.send(f"({error.response.status_code}) ISE : Erreur interne au serveur de Riot. | {error}")
+                elif error.response.status_code == 503 :
+                    await ctx.send(f"({error.response.status_code}) SU : Les serveurs de Riot sont momentanément indisponibles. | {error}")
+                else:
+                    await ctx.send(f"({error.response.status_code}) Erreur Inconnue : Attendez un administrateur... | {error}")
 
             eloSolo = None
             divSolo = None
@@ -1400,6 +1421,48 @@ async def addJoueur(ctx, person : discord.Member = None, pseudo = None, poste: i
             conn.close()
 
             await ctx.send(f"Le joueur **{person.name}** a été ajouté à la team **{newNameTeam}**.")
+    else:
+        await ctx.send("Vous n'avez pas les droits pour exécuter cette commande.")
+
+#------------------------------------------------#
+#                                                #
+#                   DELETE USER                  #
+#                                                #
+#------------------------------------------------#
+
+@client.command(brief="")
+async def deleteUser(ctx, person : discord.Member = None):
+    if ctx.author.id in WHITELIST_IDS:
+        if person is None:
+            await ctx.send("Vous devez renseigner un nom de joueur. | Ex : !deleteUser \"<pseudoDiscord>\"")
+        else:
+            conn = MysqlDef.connectionBDD()
+
+            TeamInfo = MysqlDef.getTeamForUser(conn, person.id)
+
+            oldIdTeam = 0
+            oldNameTeam = ""
+            for Team in TeamInfo:
+                oldIdTeam = Team[0]
+                oldNameTeam = Team[1]
+
+            MysqlDef.delUser(conn, person.id)
+
+            await checkTeamEmpty(oldIdTeam)
+            check = MysqlDef.checkIfTeamEmpty(conn, oldIdTeam)
+            for c in check:
+                if c[0] != 0:
+                    await updateOPGGTeam(ctx.guild, oldIdTeam)
+                    await updateTeamElo(oldIdTeam)
+            await deleteEmptyTeam(oldIdTeam)
+
+            oldTeam = discord.utils.get(ctx.guild.roles, name = f'{oldNameTeam}')
+
+            await person.remove_roles(oldTeam)
+
+            conn.close()
+
+            await ctx.send(f"Le joueur **{person.name}** a été retiré de la team **{oldNameTeam}**")
     else:
         await ctx.send("Vous n'avez pas les droits pour exécuter cette commande.")
 
@@ -1698,6 +1761,70 @@ async def initMentorat(ctx):
 #               Fonctions Glbales                #
 #                                                #
 #------------------------------------------------#
+
+#------------------------------------------------#
+#               Check Team Empty                 #
+#------------------------------------------------#
+async def checkTeamEmpty(team_id):
+    conn = MysqlDef.connectionBDD()
+
+    count = MysqlDef.checkIfTeamEmpty(conn, team_id)
+
+    for c in count:
+        if c[0] == 0:
+            await channelPurge(team_id)
+
+    conn.close()
+
+#------------------------------------------------#
+#              Delete Empty Team                 #
+#------------------------------------------------#
+async def deleteEmptyTeam(team_id):
+    conn = MysqlDef.connectionBDD()
+
+    count = MysqlDef.checkIfTeamEmpty(conn, team_id)
+
+    for c in count:
+        if c[0] == 0:
+            await channelDelete(team_id)
+
+    conn.close()
+
+#------------------------------------------------#
+#               Purge Team Empty                 #
+#------------------------------------------------#
+async def channelPurge(team_id):
+    conn = MysqlDef.connectionBDD()
+
+    channels = MysqlDef.getChannelOfTeamById(conn, team_id)
+
+    channel = None
+    for channel in channels[0]:
+        if channel != 0:
+            chan = client.get_channel(channel)
+            await chan.purge()
+ 
+    conn.close()
+
+#------------------------------------------------#
+#              Delete Team Empty                 #
+#------------------------------------------------#
+async def channelDelete(team_id):
+    conn = MysqlDef.connectionBDD()
+
+    channels = MysqlDef.getAllChannelOfTeamById(conn, team_id)
+    print(f"-------------------------------------- GET CHANNEL AND DELETE for team : {team_id} ")
+
+    channel = None
+    print(channels)
+    for channel in channels[0]:
+        if channel != 0:
+            chan = client.get_channel(channel)
+            await chan.delete()
+
+    MysqlDef.deleteTeam(conn, team_id)
+
+    conn.close()
 
 #------------------------------------------------#
 #              Set Team Creation                 #
@@ -2101,5 +2228,128 @@ async def checkAPI():
         await user.send(f"La clé d'API Riot n'est pas accessible. | {error} | https://developer.riotgames.com/")      
         return
 
+#---------------------------------------------------#
+#           Update User with Riot API               #
+#---------------------------------------------------#
+"""
+Cette fonction vérifie si l'elo de chaque joueur à changé
+depuis la nuit dernière. Si tel est le cas, la fonction
+remet à jour les informations du joueur et de la team.
 
+
+@aiocron.crontab('0 2 * * *')
+async def updateRiotAPI():
+    conn = MysqlDef.connectionBDD()
+    #serv_id = ctx.guild.id
+
+    users = MysqlDef.getAllUser(conn, serv_id) # id_riot, discord_id, name, div, team
+    guild = client.get_guild(627766433761198103)
+
+    channel = client.get_channel(841379535030321152)
+    now = datetime.datetime.now()
+    await channel.send("------------------------------------------")
+    await channel.send(f" UPDATE USER (RIOT API) : {now}")
+
+
+    for user in users:
+        try:
+        
+            my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
+
+            for i in range(len(my_ranked_stats)) : 
+                if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+
+                    #-----------------------------------#
+                    #             Variables             #
+                    #-----------------------------------#
+
+                    elo = await getElo(my_ranked_stats[i]['tier'])
+                    div = await getEloDiv(my_ranked_stats[i]['rank'])
+
+                    divTotal = await calculUserElo(int(elo), int(div))
+
+
+                    #-----------------------------------#
+                    #            Name check             #
+                    #-----------------------------------#
+
+                    if user[2] != my_ranked_stats[i]['summonerName']:
+                        MysqlDef.changeUserPseudo(conn, my_ranked_stats[0]['summonerName'], user[1])
+                        await updateOPGG(user[4], guild)
+                        await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
+
+                    #-----------------------------------#
+                    #           Division check          #
+                    #-----------------------------------#
+
+                    if user[3] != int(divTotal):
+                        print(divTotal)
+                        MysqlDef.changeUserElo(conn, user[1], divTotal)
+                        await updateTeamElo(user[4])
+                        oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
+                        oCalculElo = await getEloName(oldCalculElo)
+                        oCalculDiv = await getDivName(oldCalculDiv)
+
+                        await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
+
+
+                        role_iron = discord.utils.get(guild.roles, name = 'Iron (Lol)')
+                        role_bronze = discord.utils.get(guild.roles, name = 'Bronze (Lol)')
+                        role_silver = discord.utils.get(guild.roles, name = 'Silver (Lol)')
+                        role_gold = discord.utils.get(guild.roles, name = 'Gold (Lol)')
+                        role_plat = discord.utils.get(guild.roles, name = 'Platinum (Lol)')
+                        role_diam = discord.utils.get(guild.roles, name = 'Diamond (Lol)')
+
+                        member = guild.get_member(user[1])
+
+                        upperCaseElo = my_ranked_stats[i]['tier'].upper()
+                        newElo = await getElo(upperCaseElo)
+
+                        if oCalculElo != newElo:
+                            #------------------------------------------------#
+                            #                  Remove Role                   #
+                            #------------------------------------------------#
+                            if role_iron in member.roles:
+                                await member.remove_roles(role_iron)
+                            if role_bronze in member.roles:
+                                await member.remove_roles(role_bronze)
+                            if role_silver in member.roles:
+                                await member.remove_roles(role_silver)
+                            if role_gold in member.roles:
+                                await member.remove_roles(role_gold)
+                            if role_plat in member.roles:
+                                await member.remove_roles(role_plat)
+                            if role_diam in member.roles:
+                                await member.remove_roles(role_diam)
+                            #------------------------------------------------#
+                            #                    Add Role                    #
+                            #------------------------------------------------#
+                            if newElo == 0:
+                                await member.add_roles(role_iron)
+                            elif newElo == 1:
+                                await member.add_roles(role_bronze)
+                            elif newElo == 2:
+                                await member.add_roles(role_silver)
+                            elif newElo == 3:
+                                await member.add_roles(role_gold)
+                            elif newElo == 4:
+                                await member.add_roles(role_plat)
+                            elif newElo == 5:
+                                await member.add_roles(role_diam)
+
+
+                        
+            
+        except ApiError as error:
+            await channel.send(f"{user} div : {divTotal} | La clé d'API Riot n'est plus valide. | {error}")
+            return
+        except Exception as error:
+            await channel.send(f"{user} div : {divTotal} | Une erreur est survenue : {error}")
+            return
+            
+    now = datetime.datetime.now()
+    await channel.send(f" UPDATE USER END : {now}")
+    await channel.send("------------------------------------------")
+    conn.close()
+"""
 client.run(TOKEN)

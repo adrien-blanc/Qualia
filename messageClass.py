@@ -93,10 +93,23 @@ class Message():
     #              Message Error               #
     #------------------------------------------#
 
-    async def errorPseudo(member):
+    async def errorPseudo(member, error):
         embed=discord.Embed(title="Procédure d'inscription : **ERREUR**")
         embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
-        embed.add_field(name="Nous n'avons pas pu retrouver votre pseudo", value="Si vous estimez l'avoir renseigné correctement, veillez contacter un administrateur.", inline=False)
+        if error.response.status_code == 400:
+            embed.add_field(name="Nous n'avons pas pu retrouver votre pseudo", value=f"({error.response.status_code}) Bad Request : Vérifier le nom d'invocateur.", inline=False)
+        elif error.response.status_code == 401:
+            embed.add_field(name="Nous avons quelques soucis en interne.", value="Veillez contacter un administrateur pour qu'il puisse vous aider.", inline=False)
+        elif error.response.status_code == 403 :
+            embed.add_field(name="Nous avons quelques soucis en interne.", value="Veillez contacter un administrateur pour qu'il puisse vous aider.", inline=False)
+        elif error.response.status_code == 404  :
+            embed.add_field(name="Les serveurs de Riot n'ont pas trouvés votre nom d'invocateur.", value="Si vous estimez l'avoir renseigné correctement, veillez contacter un administrateur.", inline=False)
+        elif error.response.status_code == 500  :
+            embed.add_field(name="Une erreur s'est produite chez Riot Games", value="Malheureusement Qualia ne peut rien faire contre ça. Veuillez réessayer dans une trentaine de minute.", inline=False)
+        elif error.response.status_code == 503 :
+            embed.add_field(name="Une erreur s'est produite chez Riot Games", value="Malheureusement Qualia ne peut rien faire contre ça. Veuillez réessayer dans une trentaine de minute.", inline=False)
+        else:
+            embed.add_field(name="Erreur Inconnue", value="Veillez contacter un administrateur.", inline=False)
         embed.set_footer(text = f"Ce message va s'auto-détruire. (10 secondes)")
         msg = await member.send(embed = embed)
         return msg
@@ -431,6 +444,11 @@ class Message():
             styleName = "macro"
         elif style == 2:
             styleName = "micro / macro"
+
+        if apprendre == 0:
+            apprendre = "entendre"
+        elif apprendre == 1:
+            apprendre = "voir"
 
 
         embed=discord.Embed(title=f"Nouvel élève !")
