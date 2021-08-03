@@ -1035,19 +1035,22 @@ async def on_raw_reaction_add(payload):
 
                 roleMentor = discord.utils.get(guild.roles, name="mentor")
                 roleEleve = discord.utils.get(guild.roles, name="élève")
+                roleLol = discord.utils.get(guild.roles, name="League of Legends")
 
-                channelGeneral = await guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
+                channelGeneral = await guild.create_text_channel(f"☕𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{payload.member.name}", category = category)
                 await channelGeneral.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await channelGeneral.set_permissions(roleLol, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await channelGeneral.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 
-                voiceChannel = await guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥", category = category)
+                voiceChannel = await guild.create_voice_channel(f"🎧𝐆𝐞́𝐧𝐞́𝐫𝐚𝐥-{payload.member.name}", category = category)
                 await voiceChannel.set_permissions(payload.member, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=True, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(mentor, read_messages=True, send_messages=True, connect=True, speak=True, add_reactions = True, attach_files = True, external_emojis = False, mention_everyone = False, read_message_history = True, manage_channels = True, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = True, embed_links=True, use_slash_commands=False, mute_members=True, deafen_members=False, move_members=True, use_voice_activation=True, stream=True, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(roleMentor, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(roleEleve, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
+                await voiceChannel.set_permissions(roleLol, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
                 await voiceChannel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False, speak=False, add_reactions = False, attach_files = False, external_emojis = False, mention_everyone = False, read_message_history = False, manage_channels = False, manage_permissions = False, manage_webhooks = False, create_instant_invite = False, manage_messages = False, embed_links=False, use_slash_commands=False, mute_members=False, deafen_members=False, move_members=False, use_voice_activation=False, stream=False, priority_speaker=False, send_tts_messages=False)
 
 
@@ -2219,8 +2222,9 @@ elle m'envoie en message privé un message pour me prévenir.
 
 @aiocron.crontab('0/5 * * * *')
 async def checkAPI():
-    listOfUser = ["AzykOs", "DJ Malz", "LL Electrix", "DMara"] # 
+    listOfUser = ["AzykOs", "DJ Malz"] # 
     user = random.choice(listOfUser)
+    channelAdmin = client.get_channel(864909655259217940)
     now = datetime.datetime.now()
     print(f" CHECK API : {now}")
 
@@ -2228,7 +2232,7 @@ async def checkAPI():
         me = lol_watcher.summoner.by_name(my_region, f"{user}")
         my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
     except ApiError as error:
-        await user.send(f"La clé d'API Riot n'est pas accessible. | {error} | https://developer.riotgames.com/")      
+        await Message.errorApi(channelAdmin, now, error)
         return
 
 #---------------------------------------------------#

@@ -154,6 +154,15 @@ class Message():
         embed.add_field(name="Veuillez patienter, cette opération peut prendre un certain temps.", value=f"environ 10 secondes...", inline=False)
         msg = await channel.send(embed = embed)
         return msg
+
+    async def errorApi(channel, date, error):
+        embed=discord.Embed(title="🔴 Erreur Riot API")
+        embed.set_author(name="Qualia", icon_url="https://zupimages.net/up/21/28/xrxs.png")
+        embed.add_field(name=f"📅 {date}", value=f"Une erreur est survenue lors du check de la clé API", inline=False)
+        embed.add_field(name=f"Erreur : ", value=f"{error}", inline=False)
+        embed.set_footer(text = f"https://developer.riotgames.com/")
+        msg = await channel.send(embed = embed)
+        return msg
     
     #-----------------------------------------#
     #              Message User               #
