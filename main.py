@@ -2242,53 +2242,38 @@ async def checkAPI():
 Cette fonction vérifie si l'elo de chaque joueur à changé
 depuis la nuit dernière. Si tel est le cas, la fonction
 remet à jour les informations du joueur et de la team.
-
-
 @aiocron.crontab('0 2 * * *')
 async def updateRiotAPI():
     conn = MysqlDef.connectionBDD()
     #serv_id = ctx.guild.id
-
     users = MysqlDef.getAllUser(conn, serv_id) # id_riot, discord_id, name, div, team
     guild = client.get_guild(627766433761198103)
-
     channel = client.get_channel(841379535030321152)
     now = datetime.datetime.now()
     await channel.send("------------------------------------------")
     await channel.send(f" UPDATE USER (RIOT API) : {now}")
-
-
     for user in users:
         try:
         
             my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
-
             for i in range(len(my_ranked_stats)) : 
                 if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
-
                     #-----------------------------------#
                     #             Variables             #
                     #-----------------------------------#
-
                     elo = await getElo(my_ranked_stats[i]['tier'])
                     div = await getEloDiv(my_ranked_stats[i]['rank'])
-
                     divTotal = await calculUserElo(int(elo), int(div))
-
-
                     #-----------------------------------#
                     #            Name check             #
                     #-----------------------------------#
-
                     if user[2] != my_ranked_stats[i]['summonerName']:
                         MysqlDef.changeUserPseudo(conn, my_ranked_stats[0]['summonerName'], user[1])
                         await updateOPGG(user[4], guild)
                         await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
-
                     #-----------------------------------#
                     #           Division check          #
                     #-----------------------------------#
-
                     if user[3] != int(divTotal):
                         print(divTotal)
                         MysqlDef.changeUserElo(conn, user[1], divTotal)
@@ -2296,22 +2281,16 @@ async def updateRiotAPI():
                         oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
                         oCalculElo = await getEloName(oldCalculElo)
                         oCalculDiv = await getDivName(oldCalculDiv)
-
                         await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
-
-
                         role_iron = discord.utils.get(guild.roles, name = 'Iron (Lol)')
                         role_bronze = discord.utils.get(guild.roles, name = 'Bronze (Lol)')
                         role_silver = discord.utils.get(guild.roles, name = 'Silver (Lol)')
                         role_gold = discord.utils.get(guild.roles, name = 'Gold (Lol)')
                         role_plat = discord.utils.get(guild.roles, name = 'Platinum (Lol)')
                         role_diam = discord.utils.get(guild.roles, name = 'Diamond (Lol)')
-
                         member = guild.get_member(user[1])
-
                         upperCaseElo = my_ranked_stats[i]['tier'].upper()
                         newElo = await getElo(upperCaseElo)
-
                         if oCalculElo != newElo:
                             #------------------------------------------------#
                             #                  Remove Role                   #
@@ -2343,8 +2322,6 @@ async def updateRiotAPI():
                                 await member.add_roles(role_plat)
                             elif newElo == 5:
                                 await member.add_roles(role_diam)
-
-
                         
             
         except ApiError as error:
