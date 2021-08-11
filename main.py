@@ -1527,6 +1527,19 @@ async def resetMentorat(ctx):
     conn.close()
 
 
+@client.command()
+async def getRiotId(ctx, person = None):
+
+    now = datetime.datetime.now()
+
+    try:
+        me = lol_watcher.summoner.by_name(my_region, f"{person}")
+        await ctx.channel.send(me['id'])
+    except ApiError as error:
+        await Message.errorApi(ctx.channel, now, error)
+        return
+
+
 
 
 
@@ -2222,15 +2235,14 @@ elle m'envoie en message privé un message pour me prévenir.
 
 @aiocron.crontab('0/5 * * * *')
 async def checkAPI():
-    listOfUser = ["AzykOs", "DJ Malz"] # 
-    user = random.choice(listOfUser)
+    listOfUser = ["kODUCOn3DpajEAJnW2_LMHLKXL6-JjkIcdWzisROLwzKgDs", "VU3uNSqZWD2AWnzIDFNQtsol-SIt5_V7nkSo6htR8aXl2RA", "zSCn3iycR432lx_7hvE41alcd3ZMtPcteYvSWduK7tJRChI", "zFrR26hxnkPvn1DEomMx14I_V6yXk1TZmVjjd0dIZ6OBrB0", ] # 
+    riotUserId = random.choice(listOfUser)
     channelAdmin = client.get_channel(864909655259217940)
     now = datetime.datetime.now()
     print(f" CHECK API : {now}")
 
     try:
-        me = lol_watcher.summoner.by_name(my_region, f"{user}")
-        my_ranked_stats = lol_watcher.league.by_summoner(my_region, me['id'])
+        my_ranked_stats = lol_watcher.league.by_summoner(my_region, riotUserId)
     except ApiError as error:
         await Message.errorApi(channelAdmin, now, error)
         return
