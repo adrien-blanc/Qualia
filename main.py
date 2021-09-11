@@ -114,7 +114,62 @@ BLACKLIST_IDS = vars.BLACKLIST_IDS
 #                                                #
 #------------------------------------------------#
 
+#------------------------------------------------#
+#                on member message               #
+#------------------------------------------------#
+"""
+@client.event
+async def on_message(message):
+    channel = client.get_channel(867702043690270750)
+    conn = MysqlDef.connectionBDD()
+    check = MysqlDef.checkdot(conn)
 
+    for c in check:
+        verif = c[0]
+    if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 0 and message.author.id != 863087982159724564) :
+        await message.channel.send("Le prochain qui envoie un point dans ce channel je le ban.")
+        MysqlDef.setcheckdot(conn)
+
+    if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 1 and message.author.id != 863087982159724564) :
+        await message.author.ban()
+        await message.channel.send(f"**{message.author}** a été banni.")
+
+    conn.close()
+"""
+"""
+@client.event
+async def on_message(message):
+    channel = client.get_channel(804097189081120768)
+
+    
+
+    if message.channel.id == channel.id:
+
+        with open('/home/Production/Qualia/giveaway.json',"r") as f:
+            data = json.load(f)
+            f.close()
+
+        members = data["members"]
+
+
+        if (str(message.author.id) in members and message.author.id != 863087982159724564):
+            await message.delete()
+            await channel.send("{} tu as déjà participé !".format(message.author))
+        elif(message and message.author.id != 863087982159724564):
+            await channel.send("**{}** a gagné ! Le jeu est terminé.".format(message.author))
+        elif (message.author.id != 863087982159724564) :
+            data["members"][message.author.id] = message.author.id
+            with open("/home/Production/Qualia/giveaway.json", "w") as file:
+                json.dump(data, file, indent=4)
+"""
+
+@client.command(brief="")
+async def setGiveaway(ctx, answer = None, word = None, price = None):
+    if ((answer is None) or (word is None) or (price is None)):
+        await ctx.channel.send("Respecter ce format : !setGiveaway \"my question (string)\" \"my answer (string)\" \"price (integer)\" ")
+    else:
+        await ctx.channel.send(f"{answer} {word} {price}")
+        
 #------------------------------------------------#
 #                on member join                  #
 #------------------------------------------------#

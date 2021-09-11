@@ -335,3 +335,41 @@ class MysqlDef():
         cursor = conn.cursor()
         cursor.execute(sql)
         conn.commit()
+
+
+    def checkdot(conn):
+        sql = f"SELECT `bool` FROM `checkDot` WHERE `id_dot` = 1;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def setcheckdot(conn):
+        sql = f"UPDATE `checkDot` SET `bool`=1 WHERE id_dot = 1;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+
+
+
+
+
+
+
+
+
+    def addGiveaway(conn, word, winner, price):
+        sql = f"INSERT INTO `giveaway`(`word`, `winner`, `price`, `win`, `active`) VALUES ('{word}', '', {price}, 0, 1);"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
+    def getGiveaway(conn, id):
+        sql = f"SELECT `word`, `winner`, `price`, `win`, `active` FROM `giveaway` WHERE `id_giveaway` = {id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
