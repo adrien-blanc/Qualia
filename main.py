@@ -161,7 +161,7 @@ async def on_message(message):
             data["members"][message.author.id] = message.author.id
             with open("/home/Production/Qualia/giveaway.json", "w") as file:
                 json.dump(data, file, indent=4)
-"""
+
 
 @client.command(brief="")
 async def setGiveaway(ctx, answer = None, word = None, price = None):
@@ -169,7 +169,7 @@ async def setGiveaway(ctx, answer = None, word = None, price = None):
         await ctx.channel.send("Respecter ce format : !setGiveaway \"my question (string)\" \"my answer (string)\" \"price (integer)\" ")
     else:
         await ctx.channel.send(f"{answer} {word} {price}")
-        
+    """    
 #------------------------------------------------#
 #                on member join                  #
 #------------------------------------------------#
