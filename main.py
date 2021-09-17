@@ -2288,7 +2288,7 @@ dans le cas où elle n'est plus accessible,
 elle m'envoie en message privé un message pour me prévenir.
 """
 
-@aiocron.crontab('0/15 * * * *')
+@aiocron.crontab('0 * * * *')
 async def checkAPI():
     listOfUser = ["kODUCOn3DpajEAJnW2_LMHLKXL6-JjkIcdWzisROLwzKgDs", "VU3uNSqZWD2AWnzIDFNQtsol-SIt5_V7nkSo6htR8aXl2RA", "zSCn3iycR432lx_7hvE41alcd3ZMtPcteYvSWduK7tJRChI", "zFrR26hxnkPvn1DEomMx14I_V6yXk1TZmVjjd0dIZ6OBrB0", ] # 
     riotUserId = random.choice(listOfUser)
