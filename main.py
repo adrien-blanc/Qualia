@@ -208,6 +208,8 @@ async def on_voice_state_update(member, before, after):
                 tempChannel = await member.guild.create_voice_channel(f"🎧{k}", user_limit=limite, category = category)
                 await member.move_to(tempChannel)
                 data[f"{serveur_id}"]["temp"][tempChannel.id] = member.id
+
+                data[f"{serveur_id}"]["count"] = data[f"{serveur_id}"]["count"] + 1
             
                 with open("/home/Production/Qualia/server.json", "w") as file:
                     json.dump(data, file, indent=4)
@@ -1649,6 +1651,7 @@ async def initVoiceChannel(ctx):
         data[serveur_id]["temp"] = {}
         data[serveur_id]["mentor"] = {}
         data[serveur_id]["student"] = {}
+        data[serveur_id]["count"] = 0
         
         with open('/home/Production/Qualia/server.json','w') as f:
             json.dump(data, f, indent=4)

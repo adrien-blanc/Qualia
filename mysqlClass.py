@@ -33,7 +33,7 @@ class MysqlDef():
     #------------------------------------------------#
 
     def setServerInfo(conn, serveur_id, categorie):
-        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`, `reactionRole` , `categoryMentorat`, `reactionMentorat`, `channelMentor`, `channelMentee`) VALUES ({serveur_id}, {categorie}, 0, 0, 0, 0, 0, 0);"
+        sql = f"INSERT INTO `serveur`(`serveur_id`, `categorie`, `reactionMessage`, `reactionRole`, `categoryMentorat`, `reactionMentorat`, `channelMentor`, `channelMentee`, `reactionRoleJeu`) VALUES ({serveur_id}, {categorie}, 0, 0, 0, 0, 0, 0, 0);"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
