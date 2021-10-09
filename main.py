@@ -2260,7 +2260,9 @@ async def getInfo(nbr):
     return rst
 
 
-
+@client.command()
+async def test(ctx):
+    await ctx.channel.send("OK")
 
 
 
