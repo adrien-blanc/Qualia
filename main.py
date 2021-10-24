@@ -120,22 +120,23 @@ BLACKLIST_IDS = vars.BLACKLIST_IDS
 """
 @client.event
 async def on_message(message):
-    channel = client.get_channel(867702043690270750)
-    conn = MysqlDef.connectionBDD()
-    check = MysqlDef.checkdot(conn)
-
-    for c in check:
-        verif = c[0]
-    if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 0 and message.author.id != 863087982159724564) :
-        await message.channel.send("Le prochain qui envoie un point dans ce channel je le ban.")
-        MysqlDef.setcheckdot(conn)
-
-    if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 1 and message.author.id != 863087982159724564) :
-        await message.author.ban()
-        await message.channel.send(f"**{message.author}** a été banni.")
-
-    conn.close()
+    channel = client.get_channel(901474593439641620)
+    if message.author != client.user:
+        now = datetime.datetime.now()
+        await channel.send(f"Autor : **{message.author}** / Time : *{now.strftime('%H:%M:%S le %d/%m,')}* Content : **{message.content}**")
 """
+    # for c in check:
+    #     verif = c[0]
+    # if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 0 and message.author.id != 863087982159724564) :
+    #     await message.channel.send("Le prochain qui envoie un point dans ce channel je le ban.")
+    #     MysqlDef.setcheckdot(conn)
+
+    # if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 1 and message.author.id != 863087982159724564) :
+    #     await message.author.ban()
+    #     await message.channel.send(f"**{message.author}** a été banni.")
+
+    # conn.close()
+
 """
 @client.event
 async def on_message(message):
