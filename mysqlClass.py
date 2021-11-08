@@ -225,6 +225,13 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
+    def getAllIdTeam(conn):
+        sql = "SELECT `id_team` FROM `team` WHERE 1 ORDER BY elo_moy ASC;"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     
     #------------------------------------------------#
     #                 User functions                 #

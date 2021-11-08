@@ -1812,6 +1812,35 @@ async def initMentorat(ctx):
     conn.close()
 
 
+#------------------------------------------------#
+#                                                #
+#               UPDATE MANUELLEMENT              #
+#                                                #
+#------------------------------------------------#
+
+@client.command(brief="UPDATE OPGG ADMIN COMMAND")
+async def updateOPGG(ctx):
+    if ctx.author.id in WHITELIST_IDS:
+        msg_start = await ctx.send("Traitement ...")
+
+        message = ctx.message
+
+        conn = MysqlDef.connectionBDD()
+
+        idTeams = MysqlDef.getAllIdTeam(conn)
+
+        for idT in idTeams:
+            await deleteEmptyTeam(idT[0])
+            await updateTeamElo(idT[0])
+            await updateOPGGTeam(ctx.guild, idT[0])
+
+        conn.close()
+
+        await msg_start.delete()
+        msg_end = await ctx.send("Update des OP.GG de team terminé.")
+        await asyncio.sleep(5)
+        await msg_end.delete()
+        await message.delete()
 
 
 
