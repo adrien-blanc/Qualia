@@ -1512,12 +1512,13 @@ async def deleteUser(ctx, person : discord.Member = None):
 
             MysqlDef.delUser(conn, person.id)
 
-            await checkTeamEmpty(oldIdTeam)
+            # await checkTeamEmpty(oldIdTeam)
             check = MysqlDef.checkIfTeamEmpty(conn, oldIdTeam)
             for c in check:
                 if c[0] != 0:
                     await updateOPGGTeam(ctx.guild, oldIdTeam)
                     await updateTeamElo(oldIdTeam)
+
             await deleteEmptyTeam(oldIdTeam)
 
             oldTeam = discord.utils.get(ctx.guild.roles, name = f'{oldNameTeam}')

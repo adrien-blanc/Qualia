@@ -225,6 +225,13 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
+    def getAllChannelOfTeamById(conn, team_id):
+        sql = f"SELECT channelOpgg_id, channelAnnonce_id, channelAnalyse_id, channelChampionPool_id, channelDraft_id, channelAbscence_id, channelGeneral_id, categorie_id, voiceChannel FROM `team` WHERE id_team = {team_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     def getAllIdTeam(conn):
         sql = "SELECT `id_team` FROM `team` WHERE 1 ORDER BY elo_moy ASC;"
         print(sql)
@@ -232,6 +239,12 @@ class MysqlDef():
         cursor.execute(sql)
         return cursor.fetchall()
 
+    def getChannelOfTeamById(conn, team_id):
+        sql = f"SELECT channelAnnonce_id, channelAnalyse_id, channelChampionPool_id, channelDraft_id, channelAbscence_id, channelGeneral_id FROM `team` WHERE id_team = {team_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
     
     #------------------------------------------------#
     #                 User functions                 #
