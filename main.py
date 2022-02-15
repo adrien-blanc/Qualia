@@ -1901,18 +1901,18 @@ async def deleteEmptyTeam(team_id):
 #------------------------------------------------#
 #               Purge Team Empty                 #
 #------------------------------------------------#
-async def channelPurge(team_id):
-    conn = MysqlDef.connectionBDD()
+# async def channelPurge(team_id):
+#     conn = MysqlDef.connectionBDD()
 
-    channels = MysqlDef.getChannelOfTeamById(conn, team_id)
+#     channels = MysqlDef.getChannelOfTeamById(conn, team_id)
 
-    channel = None
-    for channel in channels[0]:
-        if channel != 0:
-            chan = client.get_channel(channel)
-            await chan.purge()
+#     channel = None
+#     for channel in channels[0]:
+#         if channel != 0:
+#             chan = client.get_channel(channel)
+#             await chan.purge()
  
-    conn.close()
+#     conn.close()
 
 #------------------------------------------------#
 #              Delete Team Empty                 #
