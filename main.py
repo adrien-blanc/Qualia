@@ -180,6 +180,25 @@ async def on_member_join(member):
     welcomeRole = discord.utils.get(member.guild.roles,name="Qualia") # Add spécifique rôle when member arive on serve.
     await member.add_roles(welcomeRole)
 
+@client.event
+async def on_member_remove(member):
+    channel = client.get_channel(864909655259217940)
+    await channel.send("**{}** has leave the server".format(member))
+    conn = MysqlDef.connectionBDD()
+    server_id = 862779743882313748
+
+    user_info = MysqlDef.getInfoUser(conn, server_id, member.id) # `discord_id`, `server_id`, `riot_id`, `pseudo`, `poste`, `div`, `team`, `search`
+
+    for user in user_info:
+        if user[0] is None:
+            await channel.send("**{}** is not registed. Skip".format(member))
+        else:
+            if user[6] == 0:
+                await channel.send("**{}** has no team. Skip".format(member))
+
+    conn.close()
+
+
 #------------------------------------------------#
 #           on voice server update               #
 #------------------------------------------------#
@@ -2291,12 +2310,18 @@ async def getInfo(nbr):
     return rst
 
 
-@client.command()
-async def test(ctx):
-    await ctx.channel.send("OK")
 
 
 
+async def updateOPGG(team_id, guild_id):
+
+    conn = MysqlDef.connectionBDD()
+
+    await deleteEmptyTeam(team_id)
+    await updateTeamElo(team_id)
+    await updateOPGGTeam(guild_id, team_id)
+
+    conn.close()
 
 
 
@@ -2345,87 +2370,107 @@ async def checkAPI():
 Cette fonction vérifie si l'elo de chaque joueur à changé
 depuis la nuit dernière. Si tel est le cas, la fonction
 remet à jour les informations du joueur et de la team.
-@aiocron.crontab('0 2 * * *')
+"""
+@aiocron.crontab('0 3 * * *')
 async def updateRiotAPI():
     conn = MysqlDef.connectionBDD()
-    #serv_id = ctx.guild.id
+    serv_id = 862779743882313748#ctx.guild.id
     users = MysqlDef.getAllUser(conn, serv_id) # id_riot, discord_id, name, div, team
-    guild = client.get_guild(627766433761198103)
-    channel = client.get_channel(841379535030321152)
+    guild = client.get_guild(862779743882313748)
+    channel = client.get_channel(864909622061695006)
     now = datetime.datetime.now()
     await channel.send("------------------------------------------")
     await channel.send(f" UPDATE USER (RIOT API) : {now}")
     for user in users:
         try:
-        
-            my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
-            for i in range(len(my_ranked_stats)) : 
-                if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
-                    #-----------------------------------#
-                    #             Variables             #
-                    #-----------------------------------#
-                    elo = await getElo(my_ranked_stats[i]['tier'])
-                    div = await getEloDiv(my_ranked_stats[i]['rank'])
-                    divTotal = await calculUserElo(int(elo), int(div))
-                    #-----------------------------------#
-                    #            Name check             #
-                    #-----------------------------------#
-                    if user[2] != my_ranked_stats[i]['summonerName']:
-                        MysqlDef.changeUserPseudo(conn, my_ranked_stats[0]['summonerName'], user[1])
-                        await updateOPGG(user[4], guild)
-                        await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
-                    #-----------------------------------#
-                    #           Division check          #
-                    #-----------------------------------#
-                    if user[3] != int(divTotal):
-                        print(divTotal)
-                        MysqlDef.changeUserElo(conn, user[1], divTotal)
-                        await updateTeamElo(user[4])
-                        oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
-                        oCalculElo = await getEloName(oldCalculElo)
-                        oCalculDiv = await getDivName(oldCalculDiv)
-                        await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
-                        role_iron = discord.utils.get(guild.roles, name = 'Iron (Lol)')
-                        role_bronze = discord.utils.get(guild.roles, name = 'Bronze (Lol)')
-                        role_silver = discord.utils.get(guild.roles, name = 'Silver (Lol)')
-                        role_gold = discord.utils.get(guild.roles, name = 'Gold (Lol)')
-                        role_plat = discord.utils.get(guild.roles, name = 'Platinum (Lol)')
-                        role_diam = discord.utils.get(guild.roles, name = 'Diamond (Lol)')
-                        member = guild.get_member(user[1])
-                        upperCaseElo = my_ranked_stats[i]['tier'].upper()
-                        newElo = await getElo(upperCaseElo)
-                        if oCalculElo != newElo:
-                            #------------------------------------------------#
-                            #                  Remove Role                   #
-                            #------------------------------------------------#
-                            if role_iron in member.roles:
-                                await member.remove_roles(role_iron)
-                            if role_bronze in member.roles:
-                                await member.remove_roles(role_bronze)
-                            if role_silver in member.roles:
-                                await member.remove_roles(role_silver)
-                            if role_gold in member.roles:
-                                await member.remove_roles(role_gold)
-                            if role_plat in member.roles:
-                                await member.remove_roles(role_plat)
-                            if role_diam in member.roles:
-                                await member.remove_roles(role_diam)
-                            #------------------------------------------------#
-                            #                    Add Role                    #
-                            #------------------------------------------------#
-                            if newElo == 0:
-                                await member.add_roles(role_iron)
-                            elif newElo == 1:
-                                await member.add_roles(role_bronze)
-                            elif newElo == 2:
-                                await member.add_roles(role_silver)
-                            elif newElo == 3:
-                                await member.add_roles(role_gold)
-                            elif newElo == 4:
-                                await member.add_roles(role_plat)
-                            elif newElo == 5:
-                                await member.add_roles(role_diam)
-                        
+            if user[4] == 0:
+                await channel.send("User {} has no team. Skip".format(user[2]))
+            else:
+                my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
+                for i in range(len(my_ranked_stats)) : 
+                    if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                        #-----------------------------------#
+                        #             Variables             #
+                        #-----------------------------------#
+                        elo = await getElo(my_ranked_stats[i]['tier'])
+                        div = await getDiv(my_ranked_stats[i]['rank'])
+                        divTotal = await calculUserElo(int(elo), int(div))
+                        #-----------------------------------#
+                        #            Name check             #
+                        #-----------------------------------#
+                        if user[2] != my_ranked_stats[i]['summonerName']:
+                            MysqlDef.changeUserPseudo(conn, my_ranked_stats[i]['summonerName'], user[1])
+                            await updateOPGG(user[4], guild)
+                            await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
+                        #-----------------------------------#
+                        #           Division check          #
+                        #-----------------------------------#
+                        if user[3] != int(divTotal):
+                            print(divTotal)
+                            MysqlDef.changeUserElo(conn, user[1], divTotal)
+                            await updateTeamElo(user[4])
+                            oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
+                            oCalculElo = await getEloName(oldCalculElo)
+                            oCalculDiv = await getDivName(oldCalculDiv)
+                            await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
+                            role_iron = discord.utils.get(guild.roles, name = 'Iron')
+                            role_bronze = discord.utils.get(guild.roles, name = 'Bronze')
+                            role_silver = discord.utils.get(guild.roles, name = 'Silver')
+                            role_gold = discord.utils.get(guild.roles, name = 'Gold')
+                            role_plat = discord.utils.get(guild.roles, name = 'Platinum')
+                            role_diam = discord.utils.get(guild.roles, name = 'Diamond')
+                            role_master = discord.utils.get(guild.roles, name = 'Master')
+                            role_grandMaster = discord.utils.get(guild.roles, name = 'GrandMaster')
+                            role_challenger = discord.utils.get(guild.roles, name = 'Challenger')
+                            member = guild.get_member(user[1])
+                            if member is None:
+                                await channel.send("{} is not on the server. Skip user".format(user[2]))
+                            else:
+                                upperCaseElo = my_ranked_stats[i]['tier'].upper()
+                                newElo = await getElo(upperCaseElo)
+                                if oCalculElo != newElo:
+                                    #------------------------------------------------#
+                                    #                  Remove Role                   #
+                                    #------------------------------------------------#
+                                    if role_iron in member.roles:
+                                        await member.remove_roles(role_iron)
+                                    if role_bronze in member.roles:
+                                        await member.remove_roles(role_bronze)
+                                    if role_silver in member.roles:
+                                        await member.remove_roles(role_silver)
+                                    if role_gold in member.roles:
+                                        await member.remove_roles(role_gold)
+                                    if role_plat in member.roles:
+                                        await member.remove_roles(role_plat)
+                                    if role_diam in member.roles:
+                                        await member.remove_roles(role_diam)
+                                    if role_master in member.roles:
+                                        await member.remove_roles(role_master)
+                                    if role_grandMaster in member.roles:
+                                        await member.remove_roles(role_grandMaster)
+                                    if role_challenger in member.roles:
+                                        await member.remove_roles(role_challenger)
+                                    #------------------------------------------------#
+                                    #                    Add Role                    #
+                                    #------------------------------------------------#
+                                    if newElo == 0:
+                                        await member.add_roles(role_iron)
+                                    elif newElo == 1:
+                                        await member.add_roles(role_bronze)
+                                    elif newElo == 2:
+                                        await member.add_roles(role_silver)
+                                    elif newElo == 3:
+                                        await member.add_roles(role_gold)
+                                    elif newElo == 4:
+                                        await member.add_roles(role_plat)
+                                    elif newElo == 5:
+                                        await member.add_roles(role_diam)
+                                    elif newElo == 6:
+                                        await member.add_roles(role_master)
+                                    elif newElo == 7:
+                                        await member.add_roles(role_grandMaster)
+                                    elif newElo == 8:
+                                        await member.add_roles(role_challenger)
             
         except ApiError as error:
             await channel.send(f"{user} div : {divTotal} | La clé d'API Riot n'est plus valide. | {error}")
@@ -2438,5 +2483,5 @@ async def updateRiotAPI():
     await channel.send(f" UPDATE USER END : {now}")
     await channel.send("------------------------------------------")
     conn.close()
-"""
+
 client.run(TOKEN)

@@ -279,11 +279,25 @@ class MysqlDef():
         conn.commit()
 
     def getAllUser(conn, serv_id):
-        sql = f"SELECT id_riot, discord_id, name, `div`, team FROM `users` WHERE `server_id` = {serv_id};"
+        sql = f"SELECT `riot_id`, `discord_id`, `pseudo`, `div`, `team` FROM `users` WHERE `server_id` = {serv_id};"
         print(sql)
         cursor = conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
+
+    def changeUserElo(conn, discord_id, divTotal):
+        sql = "UPDATE `users` SET `div`={} WHERE `discord_id`={};".format(divTotal, discord_id)
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+    
+    def changeUserPseudo(conn, pseudo, discord_id):
+        sql = "UPDATE `users` SET `pseudo`='{}' WHERE `discord_id`={};".format(pseudo, discord_id)
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
 
     #--------------------------------------------------#
     #                 Mentor functions                 #
