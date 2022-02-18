@@ -299,6 +299,13 @@ class MysqlDef():
         cursor.execute(sql)
         conn.commit()
 
+    def deleteUser(conn, user_id):
+        sql = f"DELETE FROM `users` WHERE `discord_id` = {user_id};"
+        print(sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+
     #--------------------------------------------------#
     #                 Mentor functions                 #
     #--------------------------------------------------#

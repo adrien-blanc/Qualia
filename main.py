@@ -2377,14 +2377,14 @@ async def updateRiotAPI():
     serv_id = 862779743882313748#ctx.guild.id
     users = MysqlDef.getAllUser(conn, serv_id) # id_riot, discord_id, name, div, team
     guild = client.get_guild(862779743882313748)
-    channel = client.get_channel(864909622061695006)
+    channel = client.get_channel(864909655259217940)
     now = datetime.datetime.now()
     await channel.send("------------------------------------------")
     await channel.send(f" UPDATE USER (RIOT API) : {now}")
     for user in users:
         try:
             if user[4] == 0:
-                await channel.send("User {} has no team. Skip".format(user[2]))
+                pass
             else:
                 my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
                 for i in range(len(my_ranked_stats)) : 
@@ -2424,7 +2424,8 @@ async def updateRiotAPI():
                             role_challenger = discord.utils.get(guild.roles, name = 'Challenger')
                             member = guild.get_member(user[1])
                             if member is None:
-                                await channel.send("{} is not on the server. Skip user".format(user[2]))
+                                MysqlDef.deleteUser(conn, user[1])
+                                await channel.send("{} is not on the server. Delete user".format(user[2]))
                             else:
                                 upperCaseElo = my_ranked_stats[i]['tier'].upper()
                                 newElo = await getElo(upperCaseElo)
