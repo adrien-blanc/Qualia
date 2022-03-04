@@ -1619,7 +1619,13 @@ async def getRiotId(ctx, person = None):
 
 
 
-
+@client.command()
+async def API(ctx, person):
+    if ctx.author.id in WHITELIST_IDS:
+        riot_info = lol_watcher.summoner.by_name(my_region, "{}".format(person))
+        riot_stats = lol_watcher.league.by_summoner(my_region, riot_info['id'])
+        await ctx.channel.send(riot_stats)
+        await ctx.channel.send(riot_info['id'])
 
 
 
@@ -2386,6 +2392,8 @@ async def updateRiotAPI():
             if user[4] == 0:
                 pass
             else:
+                divTotalSolo = 0
+                divTotalFlex = 0
                 my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
                 for i in range(len(my_ranked_stats)) : 
                     if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
@@ -2394,7 +2402,7 @@ async def updateRiotAPI():
                         #-----------------------------------#
                         elo = await getElo(my_ranked_stats[i]['tier'])
                         div = await getDiv(my_ranked_stats[i]['rank'])
-                        divTotal = await calculUserElo(int(elo), int(div))
+                        divTotalSolo = await calculUserElo(int(elo), int(div))
                         #-----------------------------------#
                         #            Name check             #
                         #-----------------------------------#
@@ -2402,76 +2410,92 @@ async def updateRiotAPI():
                             MysqlDef.changeUserPseudo(conn, my_ranked_stats[i]['summonerName'], user[1])
                             await updateOPGG(user[4], guild)
                             await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
+                    
+                    if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
                         #-----------------------------------#
-                        #           Division check          #
+                        #             Variables             #
                         #-----------------------------------#
-                        if user[3] != int(divTotal):
-                            print(divTotal)
-                            MysqlDef.changeUserElo(conn, user[1], divTotal)
-                            await updateTeamElo(user[4])
-                            oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
-                            oCalculElo = await getEloName(oldCalculElo)
-                            oCalculDiv = await getDivName(oldCalculDiv)
-                            await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
-                            role_iron = discord.utils.get(guild.roles, name = 'Iron')
-                            role_bronze = discord.utils.get(guild.roles, name = 'Bronze')
-                            role_silver = discord.utils.get(guild.roles, name = 'Silver')
-                            role_gold = discord.utils.get(guild.roles, name = 'Gold')
-                            role_plat = discord.utils.get(guild.roles, name = 'Platinum')
-                            role_diam = discord.utils.get(guild.roles, name = 'Diamond')
-                            role_master = discord.utils.get(guild.roles, name = 'Master')
-                            role_grandMaster = discord.utils.get(guild.roles, name = 'GrandMaster')
-                            role_challenger = discord.utils.get(guild.roles, name = 'Challenger')
-                            member = guild.get_member(user[1])
-                            if member is None:
-                                MysqlDef.deleteUser(conn, user[1])
-                                await channel.send("{} is not on the server. Delete user".format(user[2]))
-                            else:
-                                upperCaseElo = my_ranked_stats[i]['tier'].upper()
-                                newElo = await getElo(upperCaseElo)
-                                if oCalculElo != newElo:
-                                    #------------------------------------------------#
-                                    #                  Remove Role                   #
-                                    #------------------------------------------------#
-                                    if role_iron in member.roles:
-                                        await member.remove_roles(role_iron)
-                                    if role_bronze in member.roles:
-                                        await member.remove_roles(role_bronze)
-                                    if role_silver in member.roles:
-                                        await member.remove_roles(role_silver)
-                                    if role_gold in member.roles:
-                                        await member.remove_roles(role_gold)
-                                    if role_plat in member.roles:
-                                        await member.remove_roles(role_plat)
-                                    if role_diam in member.roles:
-                                        await member.remove_roles(role_diam)
-                                    if role_master in member.roles:
-                                        await member.remove_roles(role_master)
-                                    if role_grandMaster in member.roles:
-                                        await member.remove_roles(role_grandMaster)
-                                    if role_challenger in member.roles:
-                                        await member.remove_roles(role_challenger)
-                                    #------------------------------------------------#
-                                    #                    Add Role                    #
-                                    #------------------------------------------------#
-                                    if newElo == 0:
-                                        await member.add_roles(role_iron)
-                                    elif newElo == 1:
-                                        await member.add_roles(role_bronze)
-                                    elif newElo == 2:
-                                        await member.add_roles(role_silver)
-                                    elif newElo == 3:
-                                        await member.add_roles(role_gold)
-                                    elif newElo == 4:
-                                        await member.add_roles(role_plat)
-                                    elif newElo == 5:
-                                        await member.add_roles(role_diam)
-                                    elif newElo == 6:
-                                        await member.add_roles(role_master)
-                                    elif newElo == 7:
-                                        await member.add_roles(role_grandMaster)
-                                    elif newElo == 8:
-                                        await member.add_roles(role_challenger)
+                        elo = await getElo(my_ranked_stats[i]['tier'])
+                        div = await getDiv(my_ranked_stats[i]['rank'])
+                        divTotalFlex = await calculUserElo(int(elo), int(div))
+
+                divTotal = 0
+                if (divTotalFlex != 0 and divTotalSolo == 0):
+                    divTotal = divTotalFlex
+                elif (divTotalSolo != 0):
+                    divTotal = divTotalSolo
+                else:
+                    divTotal = 0
+                #-----------------------------------#
+                #           Division check          #
+                #-----------------------------------#
+                if user[3] != int(divTotal):
+                    print(divTotal)
+                    MysqlDef.changeUserElo(conn, user[1], divTotal)
+                    await updateTeamElo(user[4])
+                    oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
+                    oCalculElo = await getEloName(oldCalculElo)
+                    oCalculDiv = await getDivName(oldCalculDiv)
+                    await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
+                    role_iron = discord.utils.get(guild.roles, name = 'Iron')
+                    role_bronze = discord.utils.get(guild.roles, name = 'Bronze')
+                    role_silver = discord.utils.get(guild.roles, name = 'Silver')
+                    role_gold = discord.utils.get(guild.roles, name = 'Gold')
+                    role_plat = discord.utils.get(guild.roles, name = 'Platinum')
+                    role_diam = discord.utils.get(guild.roles, name = 'Diamond')
+                    role_master = discord.utils.get(guild.roles, name = 'Master')
+                    role_grandMaster = discord.utils.get(guild.roles, name = 'GrandMaster')
+                    role_challenger = discord.utils.get(guild.roles, name = 'Challenger')
+                    member = guild.get_member(user[1])
+                    if member is None:
+                        MysqlDef.deleteUser(conn, user[1])
+                        await channel.send("{} is not on the server. Delete user".format(user[2]))
+                    else:
+                        upperCaseElo = my_ranked_stats[i]['tier'].upper()
+                        newElo = await getElo(upperCaseElo)
+                        if oCalculElo != newElo:
+                            #------------------------------------------------#
+                            #                  Remove Role                   #
+                            #------------------------------------------------#
+                            if role_iron in member.roles:
+                                await member.remove_roles(role_iron)
+                            if role_bronze in member.roles:
+                                await member.remove_roles(role_bronze)
+                            if role_silver in member.roles:
+                                await member.remove_roles(role_silver)
+                            if role_gold in member.roles:
+                                await member.remove_roles(role_gold)
+                            if role_plat in member.roles:
+                                await member.remove_roles(role_plat)
+                            if role_diam in member.roles:
+                                await member.remove_roles(role_diam)
+                            if role_master in member.roles:
+                                await member.remove_roles(role_master)
+                            if role_grandMaster in member.roles:
+                                await member.remove_roles(role_grandMaster)
+                            if role_challenger in member.roles:
+                                await member.remove_roles(role_challenger)
+                            #------------------------------------------------#
+                            #                    Add Role                    #
+                            #------------------------------------------------#
+                            if newElo == 0:
+                                await member.add_roles(role_iron)
+                            elif newElo == 1:
+                                await member.add_roles(role_bronze)
+                            elif newElo == 2:
+                                await member.add_roles(role_silver)
+                            elif newElo == 3:
+                                await member.add_roles(role_gold)
+                            elif newElo == 4:
+                                await member.add_roles(role_plat)
+                            elif newElo == 5:
+                                await member.add_roles(role_diam)
+                            elif newElo == 6:
+                                await member.add_roles(role_master)
+                            elif newElo == 7:
+                                await member.add_roles(role_grandMaster)
+                            elif newElo == 8:
+                                await member.add_roles(role_challenger)
             
         except ApiError as error:
             await channel.send(f"{user} div : {divTotal} | La clé d'API Riot n'est plus valide. | {error}")
