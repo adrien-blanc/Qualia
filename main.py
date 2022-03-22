@@ -2385,8 +2385,9 @@ async def updateRiotAPI():
     guild = client.get_guild(862779743882313748)
     channel = client.get_channel(864909655259217940)
     now = datetime.datetime.now()
-    await channel.send("------------------------------------------")
-    await channel.send(f" UPDATE USER (RIOT API) : {now}")
+
+    check_update = False
+    
     for user in users:
         try:
             if user[4] == 0:
@@ -2407,6 +2408,10 @@ async def updateRiotAPI():
                         #            Name check             #
                         #-----------------------------------#
                         if user[2] != my_ranked_stats[i]['summonerName']:
+                            if check_update == False:
+                                await channel.send("------------------------------------------")
+                                await channel.send(f" UPDATE USER (RIOT API) : {now}")
+                                check_update = True
                             MysqlDef.changeUserPseudo(conn, my_ranked_stats[i]['summonerName'], user[1])
                             await updateOPGG(user[4], guild)
                             await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
@@ -2430,6 +2435,10 @@ async def updateRiotAPI():
                 #           Division check          #
                 #-----------------------------------#
                 if user[3] != int(divTotal):
+                    if check_update == False:
+                        await channel.send("------------------------------------------")
+                        await channel.send(f" UPDATE USER (RIOT API) : {now}")
+                        check_update = True
                     print(divTotal)
                     MysqlDef.changeUserElo(conn, user[1], divTotal)
                     await updateTeamElo(user[4])
@@ -2505,8 +2514,9 @@ async def updateRiotAPI():
             return
             
     now = datetime.datetime.now()
-    await channel.send(f" UPDATE USER END : {now}")
-    await channel.send("------------------------------------------")
+    if check_update == True:
+        await channel.send(f" UPDATE USER END : {now}")
+        await channel.send("------------------------------------------")
     conn.close()
 
 client.run(TOKEN)
