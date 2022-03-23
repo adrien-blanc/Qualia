@@ -2386,7 +2386,7 @@ async def updateRiotAPI():
     channel = client.get_channel(864909655259217940)
     now = datetime.datetime.now()
 
-    check_update = False
+    # check_update = False
     
     for user in users:
         try:
@@ -2435,10 +2435,10 @@ async def updateRiotAPI():
                 #           Division check          #
                 #-----------------------------------#
                 if user[3] != int(divTotal):
-                    if check_update == False:
-                        await channel.send("------------------------------------------")
-                        await channel.send(f" UPDATE USER (RIOT API) : {now}")
-                        check_update = True
+                    # if check_update == False:
+                    #     await channel.send("------------------------------------------")
+                    #     await channel.send(f" UPDATE USER (RIOT API) : {now}")
+                    #     check_update = True
                     print(divTotal)
                     MysqlDef.changeUserElo(conn, user[1], divTotal)
                     await updateTeamElo(user[4])
@@ -2507,16 +2507,18 @@ async def updateRiotAPI():
                                 await member.add_roles(role_challenger)
             
         except ApiError as error:
+            conn.close()
             await channel.send(f"{user} div : {divTotal} | La clé d'API Riot n'est plus valide. | {error}")
             return
         except Exception as error:
+            conn.close()
             await channel.send(f"{user} div : {divTotal} | Une erreur est survenue : {error}")
             return
             
     now = datetime.datetime.now()
-    if check_update == True:
-        await channel.send(f" UPDATE USER END : {now}")
-        await channel.send("------------------------------------------")
+    # if check_update == True:
+    await channel.send(f" UPDATE USER END : {now}")
+    await channel.send("------------------------------------------")
     conn.close()
 
 client.run(TOKEN)
