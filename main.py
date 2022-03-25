@@ -2387,6 +2387,8 @@ async def updateRiotAPI():
     now = datetime.datetime.now()
 
     # check_update = False
+    await channel.send("------------------------------------------")
+    await channel.send(f" UPDATE USER (RIOT API) : {now}")
     
     for user in users:
         try:
