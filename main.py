@@ -2398,8 +2398,12 @@ async def updateRiotAPI():
                 divTotalSolo = 0
                 divTotalFlex = 0
                 my_ranked_stats = lol_watcher.league.by_summoner(my_region, user[0])
+                saved_i = 0
+                flex_i = 0
+                solo_i = 0
                 for i in range(len(my_ranked_stats)) : 
                     if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                        solo_i = i
                         #-----------------------------------#
                         #             Variables             #
                         #-----------------------------------#
@@ -2419,6 +2423,7 @@ async def updateRiotAPI():
                             await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
                     
                     if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                        flex_i = i
                         #-----------------------------------#
                         #             Variables             #
                         #-----------------------------------#
@@ -2429,8 +2434,10 @@ async def updateRiotAPI():
                 divTotal = 0
                 if (divTotalFlex != 0 and divTotalSolo == 0):
                     divTotal = divTotalFlex
+                    saved_i = flex_i
                 elif (divTotalSolo != 0):
                     divTotal = divTotalSolo
+                    saved_i = solo_i
                 else:
                     divTotal = 0
                 #-----------------------------------#
@@ -2447,7 +2454,7 @@ async def updateRiotAPI():
                     oldCalculElo, oldCalculDiv = await calculInvUserElo(user[3])
                     oCalculElo = await getEloName(oldCalculElo)
                     oCalculDiv = await getDivName(oldCalculDiv)
-                    await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[i]['tier']} {my_ranked_stats[i]['rank']}")  
+                    await channel.send(f"{my_ranked_stats[i]['summonerName']} | {oCalculElo} {oCalculDiv} --> {my_ranked_stats[saved_i]['tier']} {my_ranked_stats[saved_i]['rank']}")  
                     role_iron = discord.utils.get(guild.roles, name = 'Iron')
                     role_bronze = discord.utils.get(guild.roles, name = 'Bronze')
                     role_silver = discord.utils.get(guild.roles, name = 'Silver')
