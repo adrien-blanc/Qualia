@@ -11,9 +11,8 @@ import random
 import aiocron
 import asyncio
 import json
-import datetime
 import sys
-
+import datetime
 from math import *
 from discord.ext import commands
 from mysqlClass import MysqlDef
@@ -78,6 +77,8 @@ client = commands.Bot(command_prefix='!', intents=intents)
 #------------------------------------------------#
 
 TOKEN = vars.TOKEN
+LOGS_ID = vars.LOGS_ID
+VERSION = vars.VERSION
 WHITELIST_IDS = vars.WHITELIST_IDS
 BLACKLIST_IDS = vars.BLACKLIST_IDS
 
@@ -125,6 +126,19 @@ async def on_message(message):
         now = datetime.datetime.now()
         await channel.send(f"Autor : **{message.author}** / Time : *{now.strftime('%H:%M:%S le %d/%m,')}* Content : **{message.content}**")
 """
+
+@client.event
+async def on_ready():
+    now = datetime.datetime.now()
+    logs_channel = client.get_channel(LOGS_ID)
+    # if await UnitTest.all_Unit_Test(logs_channel):
+    await logs_channel.send("{} | Reload version : **{}**".format(now.strftime('%d/%m/%Y, %H:%M:%S'), VERSION))
+    # else:
+    #     await logs_channel.send(f"{now.strftime('%d/%m/%Y, %H:%M:%S')} Unit test : NOK")
+
+
+
+
     # for c in check:
     #     verif = c[0]
     # if ('.' in message.content.lower() and message.channel.id == channel.id and verif == 0 and message.author.id != 863087982159724564) :
@@ -2414,10 +2428,6 @@ async def updateRiotAPI():
                         #            Name check             #
                         #-----------------------------------#
                         if user[2] != my_ranked_stats[i]['summonerName']:
-                            if check_update == False:
-                                await channel.send("------------------------------------------")
-                                await channel.send(f" UPDATE USER (RIOT API) : {now}")
-                                check_update = True
                             MysqlDef.changeUserPseudo(conn, my_ranked_stats[i]['summonerName'], user[1])
                             await updateOPGG(user[4], guild)
                             await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
@@ -2444,10 +2454,6 @@ async def updateRiotAPI():
                 #           Division check          #
                 #-----------------------------------#
                 if user[3] != int(divTotal):
-                    # if check_update == False:
-                    #     await channel.send("------------------------------------------")
-                    #     await channel.send(f" UPDATE USER (RIOT API) : {now}")
-                    #     check_update = True
                     print(divTotal)
                     MysqlDef.changeUserElo(conn, user[1], divTotal)
                     await updateTeamElo(user[4])
@@ -2525,7 +2531,6 @@ async def updateRiotAPI():
             return
             
     now = datetime.datetime.now()
-    # if check_update == True:
     await channel.send(f" UPDATE USER END : {now}")
     await channel.send("------------------------------------------")
     conn.close()
