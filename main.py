@@ -239,6 +239,8 @@ async def on_voice_state_update(member, before, after):
                     limite=5
                 elif k == "DuoQ":
                     limite=2
+                elif k == "Review":
+                    limite=2
                 tempChannel = await member.guild.create_voice_channel(f"🎧{k}", user_limit=limite, category = category)
                 await member.move_to(tempChannel)
                 data[f"{serveur_id}"]["temp"][tempChannel.id] = member.id
