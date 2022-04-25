@@ -2417,31 +2417,35 @@ async def updateRiotAPI():
                 saved_i = 0
                 flex_i = 0
                 solo_i = 0
-                for i in range(len(my_ranked_stats)) : 
-                    if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
-                        solo_i = i
-                        #-----------------------------------#
-                        #             Variables             #
-                        #-----------------------------------#
-                        elo = await getElo(my_ranked_stats[i]['tier'])
-                        div = await getDiv(my_ranked_stats[i]['rank'])
-                        divTotalSolo = await calculUserElo(int(elo), int(div))
-                        #-----------------------------------#
-                        #            Name check             #
-                        #-----------------------------------#
-                        if user[2] != my_ranked_stats[i]['summonerName']:
-                            MysqlDef.changeUserPseudo(conn, my_ranked_stats[i]['summonerName'], user[1])
-                            await updateOPGG(user[4], guild)
-                            await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
-                    
-                    if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
-                        flex_i = i
-                        #-----------------------------------#
-                        #             Variables             #
-                        #-----------------------------------#
-                        elo = await getElo(my_ranked_stats[i]['tier'])
-                        div = await getDiv(my_ranked_stats[i]['rank'])
-                        divTotalFlex = await calculUserElo(int(elo), int(div))
+                try:
+                    for i in range(len(my_ranked_stats)) : 
+                        if my_ranked_stats[i]['queueType'] == "RANKED_SOLO_5x5":
+                            solo_i = i
+                            #-----------------------------------#
+                            #             Variables             #
+                            #-----------------------------------#
+                            elo = await getElo(my_ranked_stats[i]['tier'])
+                            div = await getDiv(my_ranked_stats[i]['rank'])
+                            divTotalSolo = await calculUserElo(int(elo), int(div))
+                            #-----------------------------------#
+                            #            Name check             #
+                            #-----------------------------------#
+                            if user[2] != my_ranked_stats[i]['summonerName']:
+                                MysqlDef.changeUserPseudo(conn, my_ranked_stats[i]['summonerName'], user[1])
+                                await updateOPGG(user[4], guild)
+                                await channel.send(f"Old Summoner Name : {user[2]} | New Summoner Name : {my_ranked_stats[i]['summonerName']}")
+                        
+                        if my_ranked_stats[i]['queueType'] == "RANKED_FLEX_SR":
+                            flex_i = i
+                            #-----------------------------------#
+                            #             Variables             #
+                            #-----------------------------------#
+                            elo = await getElo(my_ranked_stats[i]['tier'])
+                            div = await getDiv(my_ranked_stats[i]['rank'])
+                            divTotalFlex = await calculUserElo(int(elo), int(div))
+                except Exception as error:
+                    await channel.send(f"{user} | Une erreur est survenue : {error}")
+                    return
 
                 divTotal = 0
                 if (divTotalFlex != 0 and divTotalSolo == 0):
