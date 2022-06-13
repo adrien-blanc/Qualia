@@ -97,11 +97,11 @@ VERSION = "1.0.2" # <- Facultatif : Permet de versionner les différentes étape
 
 ## Rendu
 Voici ce que la commande **!createTeam** fera :
-Elle va créer une nouvelle catégorie avec le nom de l'équipe, elle va créer par la suite tous les salons que l'on a jugé nécessaire pour le bon fonctionnement de cette dernière. Elle va également créer un rôle spécifique à cette équipe et seul eux auront des droits spécifiques sur ces channels, comme les voir, écrire dedans, etc...
-Salons :
+Elle va créer une nouvelle catégorie avec le nom de l'équipe, elle va créer par la suite tous les salons que l'on a jugé nécessaire pour le bon fonctionnement de cette dernière. Elle va également créer un rôle spécifique à cette équipe et seul eux auront des droits spécifiques sur ces channels, comme les voir, écrire dedans, etc...<br>
+Salons :<br>
 ![alt text](https://zupimages.net/up/22/24/yju2.png)
 
-Rôle :
+Rôle :<br>
 ![alt text](https://zupimages.net/up/22/24/35ht.png)
 
 La commande **!initVoiceChannel** va initialiser 4 Channels vocaux automatique. C'est-à-dire que lorsque que quelqu'un cliquera sur le salon *Flex* par exemple, un nouveau salon *Flex* sera crée et il sera déplacé dedans. Lorsque tout le monde aura quitté le serveur, le salon sera supprimé. Cela permet de générer un nombre infini de salon vocaux sans bloquer d'éventuelle personne qui n'aurait plus de salon libre, ou sans créer 120 salon vocaux comme on peut le voir sur certains serveurs ...
