@@ -116,13 +116,16 @@ Dans un autre projet, je stock mes données dans une base de données **Cosmo DB
 Voici un exemple de **ticketing**
 Côté BDD, voici ma méthode de connexion :
 ```python
-async  def  connectionMongoDBB(logs_channel): # le paramètre n'est pas nécessaire, il me permet de remonter mes erreurs sur un salon discord précis.
-  try:
-    conn = MongoClient("mongodb://localhost:27017/")
-    return  conn
-  except  Exception  as  error:
-    await  logs_channel.send(error)
-  return  0
+from  pymongo  import  MongoClient
+
+class  MysqlDef():
+	async  def  connectionMongoDBB(logs_channel): # le paramètre n'est pas nécessaire, il me permet de remonter mes erreurs sur un salon discord précis.
+	  try:
+	    conn = MongoClient("mongodb://localhost:27017/")
+	    return  conn
+	  except  Exception  as  error:
+	    await  logs_channel.send(error)
+	  return  0
 ```
 
 Ensuite côté main.py ou methodes.py j'insert des données de cette manière :
