@@ -104,7 +104,7 @@ Salons :<br>
 Rôle :<br>
 ![alt text](https://zupimages.net/up/22/24/35ht.png)
 
-La commande **!initVoiceChannel** va initialiser 4 Channels vocaux automatique. C'est-à-dire que lorsque que quelqu'un cliquera sur le salon *Flex* par exemple, un nouveau salon *Flex* sera crée et il sera déplacé dedans. Lorsque tout le monde aura quitté le serveur, le salon sera supprimé. Cela permet de générer un nombre infini de salon vocaux sans bloquer d'éventuelle personne qui n'aurait plus de salon libre, ou sans créer 120 salon vocaux comme on peut le voir sur certains serveurs ...
+La commande **!initVoiceChannel** va initialiser 4 Channels vocaux automatique. C'est-à-dire que lorsque que quelqu'un cliquera sur le salon *Flex* par exemple, un nouveau salon *Flex* sera crée et il sera déplacé dedans. Lorsque tout le monde aura quitté le salon, celui-ci sera supprimé. Cela permet de générer un nombre infini de salon vocaux sans bloquer d'éventuelle personne qui n'aurait plus de salon libre, ou sans créer 120 salon vocaux comme on peut le voir sur certains serveurs ...
 <br>
 ![alt text](https://zupimages.net/up/22/24/zr77.png)
 
