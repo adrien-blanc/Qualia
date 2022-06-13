@@ -108,10 +108,10 @@ La commande **!initVoiceChannel** va initialiser 4 Channels vocaux automatique. 
 <br>
 ![alt text](https://zupimages.net/up/22/24/zr77.png)
 
-Le noms de salon peut être changé dans le fichier ***server.json***, mais ce n'est pas vraiment fait pour, libre à vous de vous adapter comme vous le souhaitez. 
+Le noms des salons peut être changé dans le fichier ***server.json***, mais ce n'est pas vraiment fait pour, libre à vous de vous adapter comme vous le souhaitez. 
 Pour le coup cette partie est faite pour fonctionner sur plusieurs serveurs simultanément. En revanche, le fait d'utiliser un fichier **Json** comme stockage des données n'est pas conseillé, des risques de perte de données peuvent avoir lieux si des demandes sont effectuées simultanément.
 
-Dans un autre projet, je stock mes données dans une base de données **Cosmo DB** afin d'éviter à tout jamais ce genre de problème. Malheureusement le projet qui l'implémente est projet sur lequel je travail depuis plus d'un an et je ne peux me permettre de vous en montrer le code source. Je vous met tout de même un petit échantillon de ce à quoi ça pourrait ressembler :  
+Dans un autre projet, je stock mes données dans une base de données **Cosmo DB** afin d'éviter à tout jamais ce genre de problème. Malheureusement le projet qui l'implémente est un projet sur lequel je travail depuis plus d'un an et je ne peux me permettre de vous en montrer le code source. Je vous met tout de même un petit échantillon de ce à quoi ça pourrait ressembler :  
 
 Voici un exemple de **ticketing**
 Côté BDD, voici ma méthode de connexion :
