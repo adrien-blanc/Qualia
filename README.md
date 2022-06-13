@@ -81,19 +81,19 @@ VERSION = "1.0.2" # <- Facultatif : Permet de versionner les différentes étape
 **!createTeam** : Créer une nouvelle équipe. 
 **!addJoueur <discord_pseudo> <pseudo_en_jeu> <poste> <id_team>** : Ajoute un joueur à une équipe. Le poste doit être renseigné selon la liste suivante :
 
-> TOP : 0 
-> JUNGLE : 1 
-> MID : 2 
-> ADC : 3 
-> SUPPORT : 4
+> TOP : 0 <br>
+> JUNGLE : 1 <br>
+> MID : 2 <br>
+> ADC : 3 <br>
+> SUPPORT : 4 <br>
 
-**!purge** : Permet de supprimer l'intégralité des messages d'un channel. 
-**!deleteMentor** <discord_pseudo> : Supprime un mentor de la BDD et lui enlève le rôle. 
-**!deleteStudent** <discord_pseudo> : Supprime un élève de la BDD et lui enlève le rôle. 
-**!initVoiceChannel** : Initlialise les channels vocaux automatiques. (Ne peut être fait qu'une fois par serveur) **!initMessage** : Initie dans le channel le message permettant l'inscription des joueurs. 
-**!initMessageRole** : Initie dans le channel le message permettant de choisir son rôle et son élo.  
-**!initMentorat** : Initie la catégorie de mentorat. (Ne peut être fait qu'une fois par serveur) **!initMessageRoleJeu** : Initie dans le channel le message permettant le choix des jeux.
-**!updateOPGG** : Permet de mettre à jour les salons "opgg" de toutes les équipes si besoin.
+**!purge** : Permet de supprimer l'intégralité des messages d'un channel. <br>
+**!deleteMentor** <discord_pseudo> : Supprime un mentor de la BDD et lui enlève le rôle. <br>
+**!deleteStudent** <discord_pseudo> : Supprime un élève de la BDD et lui enlève le rôle. <br>
+**!initVoiceChannel** : Initlialise les channels vocaux automatiques. (Ne peut être fait qu'une fois par serveur) **!initMessage** : Initie dans le channel le message permettant l'inscription des joueurs. <br>
+**!initMessageRole** : Initie dans le channel le message permettant de choisir son rôle et son élo.  <br>
+**!initMentorat** : Initie la catégorie de mentorat. (Ne peut être fait qu'une fois par serveur) **!initMessageRoleJeu** : Initie dans le channel le message permettant le choix des jeux.<br>
+**!updateOPGG** : Permet de mettre à jour les salons "opgg" de toutes les équipes si besoin.<br>
 
 ## Rendu
 Voici ce que la commande **!createTeam** fera :
