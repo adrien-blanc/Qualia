@@ -8,6 +8,9 @@ Il permet entre autres de :
 * fournir un système de mentor/élève pour que la communauté s'entraide.
 * créer un message pour ajouter les rôles automatiquement en fonction des réactions des gens.
 
+Bonus (pas dans ce repository) :
+* Créer un système de ticketing.
+
 **Disclamer** :  Ce bot a été pensé pour fonctionner sur un serveur en particulier. Autrement dit, vous devrez surement vérifier l'intégralité du code afin de vous assurer que des IDs ne seraient pas en dur dans le code. Je ne pense pas qu'en tant que tel vous puissiez faire grand chose avec ces lignes de codes, car ça n'a tout simplement pas été pensé pour être rendu publique. En revanche, je reste intimement convaincu que plusieurs méthodes et subtilités de l'API de Discord vous seront utiles, tant j'ai eu du mal à les trouver à mes débuts.
 ## Prerequisites
 - Serveur Linux (machine virtuel par exemple)
